@@ -1,0 +1,161 @@
+pre code {
+  padding: 1em;
+}
+
+.snip {
+  padding: 0.2rem;
+  font-size: 0.9em;
+  font-family: 'Fira Mono', monospace;
+  color: var(--fg2);
+}
+
+.snip,
+.code {
+  border-radius: 0.25rem;
+  border: 0.25px solid var(--bg);
+  outline: 0.5px solid var(--bg3);
+  box-shadow: 2px 2px 8px rgb(0, 0, 0, 0.5);
+  background: var(--bg);
+}
+
+code {
+  font-size: 0.9em;
+  font-family: 'Fira Mono', monospace;
+  overflow-x: auto;
+  display: block;
+  tab-size: 4;
+  border-radius: 0.25rem;
+  border: 0.25px solid var(--bg);
+  outline: 0.5px solid var(--bg3);
+  box-shadow: 2px 2px 8px rgb(0, 0, 0, 0.5);
+  color: var(--fg2);
+  background: var(--bg);
+  max-height: 40em;
+}
+
+code.language-json {
+  tab-size: 2;
+}
+
+code ::selection,
+code ::selection {
+  background-color: var(--bg2);
+  color: var(--fg2)
+}
+
+.comment {
+  color: var(--bg3)
+}
+
+.tag {
+  color: var(--fg3)
+}
+
+.operator,
+.punctuation,
+.subst {
+  color: var(--fg2)
+}
+
+.operator {
+  opacity: .7
+}
+
+.bullet,
+.deletion,
+.name,
+.selector-tag,
+.template-variable,
+.variable {
+  color: var(--red)
+}
+
+.attr,
+.link,
+.literal,
+.number,
+.symbol,
+.variable.constant_ {
+  color: var(--orange)
+}
+
+code.language-css {
+  color: var(--green);
+
+  .atrule {
+    color: var(--purple) !important;
+  }
+
+  .rule {
+    color: var(--orange-dim) !important
+  }
+
+  .punctuation {
+    color: var(--orange) !important
+  }
+
+  .property {
+    color: var(--blue) !important
+  }
+
+  .selector {
+    color: var(--aqua) !important
+  }
+}
+
+.class .title,
+.title,
+.title.class_ {
+  color: var(--yellow)
+}
+
+.strong {
+  font-weight: 700;
+  color: var(--yellow)
+}
+
+.addition,
+.code,
+.string,
+.title.class_.inherited__ {
+  color: var(--green)
+}
+
+.built_in,
+.doctag,
+.keyword.atrule,
+.quote,
+.regexp {
+  color: var(--aqua)
+}
+
+.attribute,
+.function .title,
+.section,
+.title.function_,
+.ruby .property {
+  color: var(--green)
+}
+
+.diff .meta,
+.keyword,
+.template-tag,
+.type {
+  color: var(--red)
+}
+
+.emphasis {
+  color: var(--purple);
+  font-style: italic
+}
+
+.meta,
+.meta .keyword,
+.meta .string {
+  color: var(--orange)
+}
+
+.meta .keyword,
+.meta-keyword {
+  font-weight: 700
+}
