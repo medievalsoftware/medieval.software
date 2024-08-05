@@ -1,14 +1,8 @@
-
-
 build:
 	bun install
 	bun run build
 
 run:
-	PORT=8080 bun run ./build/index.js & 
-	echo $! >> last.pid
-
-kill:
-	if [ -f last.pid ]; then
-		pkill $(cat last.pid)
-	fi
+	PORT=8080 \
+	HOST_HEADER=X-Forwarded-Host \
+	bun run ./build/index.js
