@@ -29,7 +29,7 @@ server {
         }
 
         resolver 8.8.8.8;
-        proxy_pass "https://raw.githubusercontent.com/runesynergy/assets/main$request_uri";
+        proxy_pass "https://gitlab.medieval.software/rune-synergy/assets/-/raw/main$request_uri";
     }
 }
 
@@ -39,6 +39,7 @@ server {
 
     location / {
         add_header Content-Type text/html;
-        return 200 '<html><meta name="go-import" content="$repo.runesynergy.dev git https://github.com/runesynergy/$repo.git"></html>';
+        return 200 '<html><meta name="go-import" content="$repo.runesynergy.dev git https://gitlab.medieval.software/rune-synergy/$repo.git"></html>';
     }
 }
+
