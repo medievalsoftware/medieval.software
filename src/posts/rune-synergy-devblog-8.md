@@ -19,11 +19,14 @@ import Image from '$lib/components/Image.svelte';
 
 # Now you're all caught up!
 
-Just kidding, that timeline only touches some of the big events and leaves some questions to be answered. I'll touch on them in chronological order.
+Just kidding, that timeline only touches some of the big events and leaves some
+questions to be answered. I'll touch on them in chronological order.
 
 # RuneBlend
 
-RuneBlend was an application I was writing to provide a realtime preview of what a model would look like in Rune Synergy. I consider this first version a prototype, maybe even a proof of concept.
+RuneBlend was an application I was writing to provide a realtime preview of
+what a model would look like in Rune Synergy. I consider this first version a
+prototype, maybe even a proof of concept.
 
 <div class="row center">
 	<video controls playsinline class="large-video">
@@ -31,30 +34,40 @@ RuneBlend was an application I was writing to provide a realtime preview of what
 	</video>
 </div>
 
-I didn’t properly source control it, and the Blender side was lost when my Samsung Evo 970 failed. Despite that, I plan to recreate the application, as it’s still important. My previous approach had a few issues:
+I didn’t properly source control it, and the Blender side was lost when my
+Samsung Evo 970 failed. Despite that, I plan to recreate the application, as
+it’s still important. My previous approach had a few issues:
 
 1. **No standard way to detect mesh modifications in Blender**<br>
-My solution was inefficient, periodically calculating a CRC of key attributes—a costly process.
+My solution was inefficient, periodically calculating a CRC of key attributes—a
+costly process.
 
 2. **Geometry couldn’t be transmitted unless Blender was in Object mode**<br>
-This was frustrating. Access to geometry data required switching between Object and Edit mode to transmit changes to the previewer.
+This was frustrating. Access to geometry data required switching between Object
+and Edit mode to transmit changes to the previewer.
 
 We shall revisit this later!
 
 # Deprecating my own engine
 
-In early July, I realized I was unhappy with my engine package’s developer experience. Looking back at <a href="/rune-synergy-devblog-2">Devblog 2</a>, I see the design, though simple, created unnecessary work for myself.
+In early July, I realized I was unhappy with my engine package’s developer
+experience. Looking back at <a href="/rune-synergy-devblog-2">Devblog 2</a>, I
+see the design, though simple, created unnecessary work for myself.
 
 <details>
 <summary><b>Context</b>: <i>engine</i> package.</summary>
 
-It provided a platform-independent API for initializing an application, playing audio, and using hardware accelerated graphics APIs.
+It provided a platform-independent API for initializing an application, playing
+audio, and using hardware accelerated graphics APIs.
 
 <Image src="/posts/devblog-2/client-stack.png"/>
 
 </details>
 
-The low-level APIs it provided worked but were too low-level—I didn’t want to manage every detail like optimizing draw calls or handling image assets. Plus, I wanted to use platform-specific graphics APIs like DirectX and Metal. I wasn't ready to go down that rabbit hole.
+The low-level APIs it provided worked but were too low-level—I didn’t want to
+manage every detail like optimizing draw calls or handling image assets. Plus,
+I wanted to use platform-specific graphics APIs like DirectX and Metal. I wasn't
+ready to go down that rabbit hole.
 
 So instead of suffering from <a href="https://en.wikipedia.org/wiki/Not_invented_here">Not Invented Here</a>, I found a solution:
 
@@ -66,28 +79,33 @@ Ebitengine checks all the boxes and more for what I was originally looking
 for. In hindsight I should have considered game engines first before libraries.
 That's just life I guess!
 
-You might be wondering to yourself: Wait, doesn't that say 2D game engine?
-This is 3D! Well... luckily for us Ebitengine provides some fancy and efficient
-functions to draw primitives like triangles - the only thing we need for 3D.
-
 <ul>
-  <li><b>Cross-Platform Support</b><br>Windows, macOS, Linux, and browsers (via WebAssembly)</li>
+  <li><b><a href="https://ebitengine.org/en/documents/features.html">Cross-Platform Support</a></b><br>Windows, macOS, Linux, FreeBSD, Android, iOS and browsers (via WebAssembly)</li>
   <br>
-  <li><b>Simplicity and Ease of Use</b><br>Abstracts away complex graphical API details, letting me focus more on game development rather than low-level coding, making it easier to implement game features.</li>
+  <li><b><a href="https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2">Simplicity and Ease of Use</a></b><br>Abstracts complex graphical API details, allowing me to focus on game development and simplify feature implementation.</li>
   <br>
-  <li><b>Kage Shader Language</b><br>Ebitengine's built-in shader language, Kage, provides a very familiar language which is reminiscent of Go for writing shaders.</li>
+  <li><b><a href="https://ebitengine.org/en/documents/shader.html">Kage Shader Language</a></b><br>Ebitengine's built-in shader language, Kage, offers a familiar, Go-like syntax for writing shaders.</li>
   <br>
-  <li><b>Active Community and Open Source</b><br>Ebitengine’s active community and open-source nature allows Rune Synergy to receive engine improvements by proxy!</li>
+  <li><b><a href="https://github.com/hajimehoshi/ebiten">Active Community and Open Source</a></b><br>Ebitengine’s active community and open-source nature allows Rune Synergy to benefit from ongoing engine improvements!</li>
 </ul>
 
-Luckily the way I've written the game client thus far has made migrating from
-my old engine to Ebitengine a smooth process. I managed to completely remove
-dependence on the original engine package in <b>two weeks</b>.
+Ebitengine is a 2D game engine, which may seem counterintuitive for our project,
+but it fits well with our software pipeline. Ebitengine's vertices are in the
+same screen space as the triangle primitives from our pipeline, allowing us
+to append triangles directly to a list and rasterize them on the viewport. The
+diagram below illustrates this process:
 
-There's no visual difference in the game from this migration, which is good
-news! Now we can get back to focusing on writing the damn thing.
+<div class="row center">
+<Image src="/posts/devblog-8/pipeline.svg" class="xlarge-img"/>
+</div>
+
+The game looks the same after the migration, which is great! Plus, the audio
+library we're using, <a href="https://github.com/ebitengine/oto">oto</a>, is
+already part of Ebitengine.
 
 # A continuation
+
+<Image src="/posts/devblog-8/continuation.webp"/>
 
 In the previous devblog I left you with this unfinished list:
 
