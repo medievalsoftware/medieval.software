@@ -34,7 +34,7 @@ prototype, maybe even a proof of concept.
 
 <div class="row center">
 	<video controls playsinline class="large-video">
-		<source type="video/mp4" src="/posts/devblog-8/rune-blend.mp4"/>
+		<source type="video/mp4" src="/posts/devblog-8/runeblend.mp4"/>
 	</video>
 </div>
 
