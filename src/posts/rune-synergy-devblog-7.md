@@ -180,8 +180,6 @@ This type of behavior isn't utilized in 317, but it will allow us to do some
 fancy things later on (if we want), like adding reverb to caves specifically
 for **Effects** and **Ambience**. This also means features like spatial sound
 effects are trivial panners and attenuations. I've even already implemented it!
-You can  test out the 2D demo [here](https://medievalsoftware.github.io/). Make
-sure to select *test-audio* and use your WASD keys to move around.
 
 Here is a diagram of the new audio engine:
 

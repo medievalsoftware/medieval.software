@@ -51,7 +51,7 @@ One of the large dampening factors of progress was a lack of a functional game
 world. It feels almost like a real-world deadlock where I can’t do them both
 simultaneously, it’s one or the other. I’ve gotten a pretty sweet setup for
 the client but can’t get in the game yet. It’s very functional up to the
-[login screen](https://medievalsoftware.github.io/). So I have to decide between two choices:
+login screen. So I have to decide between two choices:
 
 1. Get the server working for the standard Java Client
 2. Get the client rewritten for an existing server

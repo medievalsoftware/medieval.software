@@ -169,7 +169,7 @@ I’m getting ahead of myself.
 
 # Client prototype restructure
 
-I introduced a simple resource package to load assets. [The demo is still up.](https://medievalsoftware.github.io/)
+I introduced a simple resource package to load assets.
 There’s still no gameplay but I’m definitely downloading lots of stuff and
 loading them onto the GPU.
 

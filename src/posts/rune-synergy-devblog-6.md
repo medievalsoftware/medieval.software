@@ -98,8 +98,6 @@ I also ended up taking an ImGui approach for button inputs.
 
 <video autoplay playsinline loop muted src="/posts/devblog-6/title.mp4"></video>
 
-Check the demo out at https://medievalsoftware.github.io/.
-
 # I see no scene
 
 So far I’ve only stubbed out the structures for the scene graph. Going back to
