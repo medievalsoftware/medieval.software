@@ -302,16 +302,18 @@ In [Devblog 3](/rune-synergy-devblog-3), I showcased writing configurations in G
 
 Of course, there's the client work, and the best part: we're nearly there. Here's a list of the remaining features:
 
-- [ ] **Audio**
-  - [ ] Spatial Sound Effects
+- [x] **Audio**
+  - [x] Spatial Sound Effects
 - [ ] **Packets**
-  - [ ] IfSetAngle
-  - [ ] PlayerLocMerge
-  - [ ] Camera (LookAt, MoveTo, Shake, Reset)
+  - [x] IfSetAngle
+  - [x] PlayerLocMerge
+  - [x] Camera (LookAt, MoveTo, Shake, Reset)
   - [ ] BuildSceneInstanced
     - This one could wait until later when the server needs it.
 - [ ] **Engine**
   - [ ] Move the scene over to GPU rasterization
+
+**Last update: 4 Oct 2024**
 
 Once this is done, I'll begin designing the serverside systems more thoroughly, and hopefully, we'll start seeing actual collaboration! I've been working on this for so long, and I'm still eager to get others involved.
 
