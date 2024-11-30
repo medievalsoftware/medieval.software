@@ -17,7 +17,7 @@
 		<div class="col-9-10 content">
 			<p>
 				Medieval Software was born out of my love for software development and the medieval times.
-				At the moment it isn't much of a company, it's more of a self hosted platform/blog for my
+				At the moment it isn't much of a company, it's more of a self hosted blog for my
 				thoughts and endeavors.
 			</p>
 		</div>
@@ -319,24 +319,6 @@
 					<span class="tech icon devicon-windows8-plain colored" />
 				</span>
 			</div>
-		</div>
-	</div>
-	<div class="row gap-1">
-		<div class="col-1-10 gutter">
-			<p>Blog</p>
-		</div>
-		<div class="col-9-10 content">
-			<p>
-				Most of my posts are devblogs of my current project <a href="/rune-synergy">Rune Synergy</a
-				>, and maybe some random experiments on the side.
-			</p>
-			<p>You might want to stick around if you enjoy the following topics:</p>
-			<ul>
-				<li>Software Rasterization</li>
-				<li>Audio Synthesizing</li>
-				<li>3D Modelling</li>
-				<li>Medieval styled RPGs</li>
-			</ul>
 		</div>
 	</div>
 </article>

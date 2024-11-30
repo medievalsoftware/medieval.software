@@ -21,13 +21,12 @@
 
 	/** @type import("$lib/types").Link[] */
 	let links = [
-		{ text: 'GitLab', url: 'https://gitlab.medieval.software/explore', img: '/images/gitlab.png' },
 		{ text: 'GitHub', url: 'https://github.com/medievalsoftware', img: '/images/github.png' },
-		{ text: 'Discord', url: 'https://discord.gg/spGvP5EJDk', img: '/images/discord.png' }
+		{ text: 'Discord', url: 'https://discord.gg/TV8sgft47d', img: '/images/discord.png' }
 	];
 
 	/** @type import("$lib/types").Link[] */
-	let projects = [{ text: 'Rune Synergy', url: '/rune-synergy', img: '/images/rune-synergy.png' }];
+	/** let projects = [{ text: 'Rune Synergy', url: '/rune-synergy', img: '/images/rune-synergy.png' }]; */
 
 	let scroll_to_top = () => {
 		let content = document.querySelector('main');
@@ -70,7 +69,7 @@
 				}
 			}}
 		/>
-		<Link
+		<!-- <Link
 			caption="Projects"
 			href="#"
 			img="/images/rune-synergy.png"
@@ -83,7 +82,7 @@
 					show.links = false;
 				}
 			}}
-		/>
+		/> -->
 		<Link
 			caption="Links"
 			href="#"
@@ -128,7 +127,7 @@
 		</nav>
 	{/if}
 
-	{#if show.projects}
+	<!-- {#if show.projects}
 		<nav id="mobile-links" class="groups">
 			<div class="group">
 				<Links
@@ -141,7 +140,7 @@
 				/>
 			</div>
 		</nav>
-	{/if}
+	{/if} -->
 
 	{#if show.links}
 		<nav id="mobile-links" class="groups">
@@ -172,7 +171,7 @@
 				</a>
 			</div>
 
-			<div class="group">
+			<!-- <div class="group">
 				<Links
 					caption="Projects"
 					links={projects}
@@ -180,7 +179,7 @@
 						scroll_to_top();
 					}}
 				/>
-			</div>
+			</div> -->
 
 			<Links {links} />
 
