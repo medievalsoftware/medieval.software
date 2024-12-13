@@ -1,5 +1,6 @@
 ---
-title: Looking Forward
+title: Rune Synergy
+subtitle: Looking Forward
 date: '3 January 2023'
 publish: true
 icon: /images/rune-synergy.png
