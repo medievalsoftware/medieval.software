@@ -14,10 +14,6 @@ Some of you may already know I've discontinued development as of the 30th of
 September. If not, then surprise! I have a whole expedition to put you through
 if you're interested, otherwise here's the tl;dr:
 
-Some of you might already know that I officially discontinued development on
-September 30th. If you didn’t, well—surprise! I’ve got quite the journey to
-share with you if you're curious. Otherwise, here’s the tl;dr:
-
 > The project no longer aligns with my interests and life goals.
 
 <hr>
