@@ -11,7 +11,7 @@ import Image from '$lib/components/Image.svelte';
 </script>
 
 Some of you may already know I've discontinued development as of the 30th of
-September. If not, then surprise! I have a whole expedition to put you through
+September. If not, then surprise! I have a whole exposition to put you through
 if you're interested, otherwise here's the tl;dr:
 
 > The project no longer aligns with my interests and life goals.
