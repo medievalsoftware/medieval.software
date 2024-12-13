@@ -22,8 +22,7 @@ if you're interested, otherwise here's the tl;dr:
 
 Initially when writing this I wanted to quantify the entire experience, but I
 realized that would probably be boring. So instead I'll start by saying where
-my mind is at today and elaborate on what's lead me to this point. Then after
-I'd like to summarize the major lessons I've learned throughout this project.
+my mind is at today and elaborate on what's lead me to this point.
 
 # My Mind
 
