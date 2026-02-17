@@ -1,5 +1,5 @@
 <script>
-	import { sampleCurve, curvePathData, autoTangent } from '$lib/curve.js';
+	import { sampleCurve, autoTangent } from '$lib/curve.js';
 
 	/** @type {import('$lib/curve.js').Keyframe[]} */
 	export let points = [
@@ -14,7 +14,6 @@
 	const TANGENT_RADIUS = 50;
 	const REMOVE_DISTANCE = 30;
 	const POINT_RADIUS = 5;
-	const HANDLE_RADIUS = 3;
 
 	let svg;
 	let selected = -1;
@@ -26,7 +25,6 @@
 	let removing = false;
 	let contextMenu = null;
 	let presetOpen = false;
-	let wrapper;
 
 	let longPressTimer = null;
 	const LONG_PRESS_MS = 500;
@@ -43,13 +41,35 @@
 		{ label: 'Smooth', action: 'smooth' },
 	];
 
-	$: sorted = [...points].sort((a, b) => a.x - b.x);
-	$: pathD = curvePathData(points, W, H);
-	$: selectedPoint = selected >= 0 && selected < points.length ? points[selected] : null;
+	function sortedPoints() {
+		return [...points].sort((a, b) => a.x - b.x);
+	}
 
-	/** Recompute tangent values for all 'auto' mode points based on neighbors */
+	function hitTestPoint(sx, sy, threshold) {
+		for (let i = 0; i < points.length; i++) {
+			let ps = toSvg(points[i].x, points[i].y);
+			if (Math.sqrt((sx - ps.x) ** 2 + (sy - ps.y) ** 2) < threshold) return i;
+		}
+		return -1;
+	}
+
+	function addKeyframe(x, y) {
+		let newPoint = {
+			x: parseFloat(Math.max(0, Math.min(1, x)).toFixed(4)),
+			y: parseFloat(Math.max(0, Math.min(1, y)).toFixed(4)),
+			interpolation: 'cubic',
+			tangentIn: 0,
+			tangentOut: 0,
+			tangentMode: 'auto'
+		};
+		points = [...points, newPoint];
+		sortPoints();
+		refreshAutoTangents();
+		selected = points.indexOf(newPoint);
+	}
+
 	function refreshAutoTangents() {
-		let s = [...points].sort((a, b) => a.x - b.x);
+		let s = sortedPoints();
 		let changed = false;
 		for (let i = 0; i < s.length; i++) {
 			if (s[i].tangentMode === 'auto') {
@@ -105,7 +125,7 @@
 
 	function canDeleteSelected() {
 		if (selected < 0 || points.length <= 2) return false;
-		let s = [...points].sort((a, b) => a.x - b.x);
+		let s = sortedPoints();
 		let si = s.indexOf(points[selected]);
 		return si > 0 && si < s.length - 1;
 	}
@@ -170,14 +190,12 @@
 	}
 
 	function sortPoints() {
-		points = [...points].sort((a, b) => a.x - b.x);
+		points = sortedPoints();
 	}
 
 	function tangentHandlePos(point, tangent, isIn) {
-		let aspectRatio = 1;
-		let widgetSlope = tangent * aspectRatio;
 		let dx = 1;
-		let dy = -widgetSlope;
+		let dy = -tangent;
 		let len = Math.sqrt(dx * dx + dy * dy);
 		dx /= len;
 		dy /= len;
@@ -233,7 +251,7 @@
 			y = Math.max(0, Math.min(1, y));
 
 			// First/last sorted points: lock x
-			let s = [...points].sort((a, b) => a.x - b.x);
+			let s = sortedPoints();
 			let sortedIdx = s.indexOf(points[dragIdx]);
 			if (sortedIdx === 0) {
 				x = 0;
@@ -256,11 +274,7 @@
 			const pSvg = toSvg(points[dragIdx].x, points[dragIdx].y);
 			const centerScreenY = rect.top + (pSvg.y / H) * rect.height;
 			const dy = Math.abs(e.clientY - centerScreenY);
-			let canRemove = points.length > 2;
-			// Can't remove first/last
-			let s2 = [...points].sort((a, b) => a.x - b.x);
-			let si = s2.indexOf(points[dragIdx]);
-			if (si === 0 || si === s2.length - 1) canRemove = false;
+			let canRemove = points.length > 2 && sortedIdx > 0 && sortedIdx < s.length - 1;
 			removing = canRemove && dy > REMOVE_DISTANCE;
 		} else {
 			// Tangent handle drag
@@ -335,49 +349,17 @@
 		closeContextMenu();
 
 		const { x: sx, y: sy } = svgCoords(e);
+		let hit = hitTestPoint(sx, sy, POINT_RADIUS * 2);
+		if (hit >= 0) { selected = hit; return; }
+
 		const { x, y } = toNorm(sx, sy);
-
-		// Check if clicked near an existing point
-		for (let i = 0; i < points.length; i++) {
-			let ps = toSvg(points[i].x, points[i].y);
-			let dist = Math.sqrt((sx - ps.x) ** 2 + (sy - ps.y) ** 2);
-			if (dist < POINT_RADIUS * 2) {
-				selected = i;
-				return;
-			}
-		}
-
-		// Add new keyframe
-		let newPoint = {
-			x: parseFloat(Math.max(0, Math.min(1, x)).toFixed(4)),
-			y: parseFloat(Math.max(0, Math.min(1, y)).toFixed(4)),
-			interpolation: 'cubic',
-			tangentIn: 0,
-			tangentOut: 0,
-			tangentMode: 'auto'
-		};
-		points = [...points, newPoint];
-		sortPoints();
-		refreshAutoTangents();
-		selected = points.indexOf(newPoint);
+		addKeyframe(x, y);
 	}
 
 	function onContextMenu(e) {
 		e.preventDefault();
-		const rect = svg.getBoundingClientRect();
 		const { x: sx, y: sy } = svgCoords(e);
-
-		// Check if right-clicked on a point
-		let hitIdx = -1;
-		for (let i = 0; i < points.length; i++) {
-			let ps = toSvg(points[i].x, points[i].y);
-			let dist = Math.sqrt((sx - ps.x) ** 2 + (sy - ps.y) ** 2);
-			if (dist < POINT_RADIUS * 3) {
-				hitIdx = i;
-				break;
-			}
-		}
-
+		let hitIdx = hitTestPoint(sx, sy, POINT_RADIUS * 3);
 		if (hitIdx >= 0) selected = hitIdx;
 
 		contextMenu = {
@@ -397,26 +379,12 @@
 	function contextAdd() {
 		if (!contextMenu) return;
 		const { x, y } = toNorm(contextMenu.svgX, contextMenu.svgY);
-		let newPoint = {
-			x: parseFloat(Math.max(0, Math.min(1, x)).toFixed(4)),
-			y: parseFloat(Math.max(0, Math.min(1, y)).toFixed(4)),
-			interpolation: 'cubic',
-			tangentIn: 0,
-			tangentOut: 0,
-			tangentMode: 'auto'
-		};
-		points = [...points, newPoint];
-		sortPoints();
-		refreshAutoTangents();
-		selected = points.indexOf(newPoint);
+		addKeyframe(x, y);
 		closeContextMenu();
 	}
 
 	function contextDelete() {
-		if (selected < 0 || points.length <= 2) { closeContextMenu(); return; }
-		let s = [...points].sort((a, b) => a.x - b.x);
-		let si = s.indexOf(points[selected]);
-		if (si === 0 || si === s.length - 1) { closeContextMenu(); return; }
+		if (!canDeleteSelected()) { closeContextMenu(); return; }
 		points = points.filter((_, j) => j !== selected);
 		refreshAutoTangents();
 		selected = -1;
@@ -446,48 +414,14 @@
 	function onKeyDown(e) {
 		if (selected < 0) return;
 		switch (e.key) {
-			case '1':
-				points[selected].interpolation = 'cubic';
-				points[selected].tangentMode = 'auto';
-				refreshAutoTangents();
-				points = points;
-				break;
-			case '2':
-				points[selected].interpolation = 'cubic';
-				points[selected].tangentMode = 'mirrored';
-				points = points;
-				break;
-			case '3':
-				points[selected].interpolation = 'cubic';
-				points[selected].tangentMode = 'split';
-				points = points;
-				break;
-			case '4':
-				points[selected].interpolation = 'linear';
-				points = points;
-				break;
-			case '5':
-				points[selected].interpolation = 'constant';
-				points = points;
-				break;
-			case '6':
-				points[selected].tangentIn = 0;
-				points[selected].tangentOut = 0;
-				points[selected].tangentMode = 'split';
-				points = points;
-				break;
+			case '1': setInterpolation('cubic', 'auto'); break;
+			case '2': setInterpolation('cubic', 'mirrored'); break;
+			case '3': setInterpolation('cubic', 'split'); break;
+			case '4': setInterpolation('linear'); break;
+			case '5': setInterpolation('constant'); break;
+			case '6': contextFlatten(); break;
 			case 'Delete':
-			case 'Backspace':
-				if (points.length > 2) {
-					let s = [...points].sort((a, b) => a.x - b.x);
-					let si = s.indexOf(points[selected]);
-					if (si > 0 && si < s.length - 1) {
-						points = points.filter((_, j) => j !== selected);
-						refreshAutoTangents();
-						selected = -1;
-					}
-				}
-				break;
+			case 'Backspace': contextDelete(); break;
 		}
 	}
 
@@ -546,7 +480,7 @@
 		if (idx !== selected) return false;
 		if (point.interpolation !== 'cubic') {
 			// Also check if previous segment targets this point with cubic
-			let s = [...points].sort((a, b) => a.x - b.x);
+			let s = sortedPoints();
 			let si = s.indexOf(point);
 			if (si > 0 && s[si - 1].interpolation === 'cubic') return true;
 			return false;
@@ -590,7 +524,7 @@
 
 <svelte:window on:click={closeContextMenu} on:keydown={onKeyDown} />
 
-<div class="curve-editor" style="--accent: var(--{color}); --accent-dim: var(--{color}-dim)" bind:this={wrapper}>
+<div class="curve-editor" style="--accent: var(--{color}); --accent-dim: var(--{color}-dim)">
 	<div class="curve-toolbar">
 		<div class="curve-preset-wrap">
 			<button class="curve-preset-btn" on:click|stopPropagation={() => presetOpen = !presetOpen}>
@@ -640,7 +574,7 @@
 				{@const ptSvg = toSvg(point.x, point.y)}
 				{@const hIn = tangentHandlePos(point, point.tangentIn, true)}
 				{@const hOut = tangentHandlePos(point, point.tangentOut, false)}
-				{@const s = [...points].sort((a, b) => a.x - b.x)}
+				{@const s = sortedPoints()}
 				{@const si = s.indexOf(point)}
 				{#if si > 0 && s[si - 1].interpolation === 'cubic'}
 					<g class="tangent-group" on:pointerdown={(e) => onTangentPointerDown(e, i, 'tangentIn')}>
