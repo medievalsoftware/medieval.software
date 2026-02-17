@@ -110,7 +110,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: stretch;
-		background: var(--bg0_h, #1d2021);
+		background: var(--bg0_h);
 		border-radius: var(--radius);
 		overflow: hidden;
 		font-size: 0.9em;
@@ -143,7 +143,7 @@
 		padding: 0 0.4rem;
 		font-family: 'Fira Mono', monospace;
 		font-size: 0.9em;
-		color: var(--fg1, #ebdbb2);
+		color: var(--fg1);
 		cursor: text;
 		user-select: none;
 	}
@@ -152,7 +152,7 @@
 		flex: 1;
 		padding: 0 0.4rem;
 		background: transparent;
-		color: var(--fg1, #ebdbb2);
+		color: var(--fg1);
 		border: none;
 		outline: none;
 		font-family: 'Fira Mono', monospace;

@@ -183,7 +183,6 @@
 		border: 1px solid rgba(255, 255, 255, 0.12);
 		border-radius: 4px;
 		backdrop-filter: blur(6px);
-		z-index: 1;
 	}
 
 	.p5-corner-popover button {
@@ -408,7 +407,7 @@
 		min-width: 0;
 		height: 1.4em;
 		border-radius: var(--radius);
-		background: var(--bg0_h, #1d2021);
+		background: var(--bg0_h);
 		outline: none;
 		cursor: pointer;
 	}
@@ -419,7 +418,7 @@
 		width: 5px;
 		height: 1.1em;
 		border-radius: var(--radius-sm);
-		background: var(--fg3, #bdae93);
+		background: var(--fg3);
 		cursor: pointer;
 		border: none;
 	}
@@ -428,7 +427,7 @@
 		width: 5px;
 		height: 1.1em;
 		border-radius: var(--radius-sm);
-		background: var(--fg3, #bdae93);
+		background: var(--fg3);
 		cursor: pointer;
 		border: none;
 	}

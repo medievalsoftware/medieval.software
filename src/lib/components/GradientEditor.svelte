@@ -1,4 +1,6 @@
 <script>
+	import { hexToRgb, rgbToHex } from '$lib/color.js';
+
 	/** @type {{pos: number, color: string}[]} */
 	export let stops = [
 		{ pos: 0, color: '#000000' },
@@ -24,17 +26,6 @@
 	function posFromEvent(e) {
 		const rect = track.getBoundingClientRect();
 		return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-	}
-
-	function hexToRgb(hex) {
-		let r = parseInt(hex.slice(1, 3), 16);
-		let g = parseInt(hex.slice(3, 5), 16);
-		let b = parseInt(hex.slice(5, 7), 16);
-		return [r, g, b];
-	}
-
-	function rgbToHex(r, g, b) {
-		return '#' + [r, g, b].map(c => Math.round(c).toString(16).padStart(2, '0')).join('');
 	}
 
 	function interpolateColor(pos) {
@@ -132,7 +123,9 @@
 				style="left: {stop.pos * 100}%; --stop-color: {stop.color}"
 				on:pointerdown={(e) => onStopPointerDown(e, i)}
 			>
-				<div class="stop-marker"></div>
+				<svg class="stop-marker" viewBox="0 0 10 8" xmlns="http://www.w3.org/2000/svg">
+					<path d="M5 0L10 8H0Z" fill="var(--stop-color)" stroke="black" stroke-width="1" stroke-linejoin="round" />
+				</svg>
 			</div>
 		{/each}
 	</div>
@@ -159,16 +152,18 @@
 	.gradient-track {
 		width: 100%;
 		height: 1.4em;
-		border-radius: var(--radius);
+		border-radius: var(--radius) var(--radius) 0 0;
 		cursor: crosshair;
 		touch-action: none;
 		user-select: none;
-		border: 1px solid var(--bg3, #665c54);
+		border: 1px solid var(--bg3);
 	}
 
 	.gradient-stops {
 		position: relative;
 		height: 0.9em;
+		left: 2px;
+		width: calc(100% - 2px);
 	}
 
 	.gradient-stop {
@@ -186,24 +181,26 @@
 	}
 
 	.stop-marker {
-		width: 0;
-		height: 0;
-		border-left: 5px solid transparent;
-		border-right: 5px solid transparent;
-		border-bottom: 7px solid var(--stop-color);
-		filter: drop-shadow(0 0 1px rgba(0,0,0,0.6));
+		width: 10px;
+		height: 8px;
+		display: block;
+		overflow: visible;
 	}
 
 	.gradient-stop.selected .stop-marker {
-		border-bottom-width: 9px;
-		filter: drop-shadow(0 0 2px rgba(255,255,255,0.4));
+		width: 12px;
+		height: 10px;
+	}
+
+	.gradient-stop.selected .stop-marker path {
+		stroke: var(--orange);
 	}
 
 	.gradient-color-input {
 		width: 1.6em;
 		height: 1.2em;
 		padding: 0;
-		border: 1px solid var(--bg3, #665c54);
+		border: 1px solid var(--bg3);
 		border-radius: var(--radius);
 		background: transparent;
 		cursor: pointer;

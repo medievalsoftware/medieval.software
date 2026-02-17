@@ -53,6 +53,7 @@
 	on:lostpointercapture={onPointerUp}
 	style="--fill-color: var(--{color}-dim)"
 >
+	<div class="range-track"></div>
 	<div class="range-fill" style="left:{lowPct}%;width:{highPct - lowPct}%"></div>
 	<div class="range-grip" style="left:{lowPct}%" on:pointerdown={(e) => onPointerDown(e, 'low')}></div>
 	<div class="range-grip" style="left:{highPct}%" on:pointerdown={(e) => onPointerDown(e, 'high')}></div>
@@ -63,11 +64,22 @@
 		position: relative;
 		width: 100%;
 		height: 1.4em;
-		background: var(--bg0_h, #1d2021);
+		background: var(--bg0_h);
 		border-radius: var(--radius);
 		cursor: pointer;
 		touch-action: none;
 		user-select: none;
+	}
+
+	.range-track {
+		position: absolute;
+		top: 37.5%;
+		height: 25%;
+		left: 0;
+		right: 0;
+		background: var(--bg1);
+		border-radius: var(--radius);
+		pointer-events: none;
 	}
 
 	.range-fill {
@@ -85,7 +97,7 @@
 		height: 80%;
 		width: 5px;
 		border-radius: var(--radius-sm);
-		background: var(--fg3, #bdae93);
+		background: var(--fg3);
 		transform: translateX(-50%);
 		cursor: ew-resize;
 		touch-action: none;
@@ -93,6 +105,6 @@
 
 	.range-grip:hover,
 	.range-grip:active {
-		background: var(--fg2, #d5c4a1);
+		background: var(--fg2);
 	}
 </style>
