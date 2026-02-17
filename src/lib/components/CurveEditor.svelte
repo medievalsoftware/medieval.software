@@ -32,6 +32,16 @@
 	const LONG_PRESS_MS = 500;
 	const LONG_PRESS_MOVE_THRESHOLD = 8;
 	let longPressStart = null;
+	let orbitalMenu = null;
+	const ORBITAL_RADIUS = 72;
+	const ORBITAL_DEAD_ZONE = 20;
+	const ORBITAL_ITEMS = [
+		{ label: 'Delete', action: 'delete' },
+		{ label: 'Flatten', action: 'flatten' },
+		{ label: 'Linear', action: 'linear' },
+		{ label: 'Step', action: 'step' },
+		{ label: 'Smooth', action: 'smooth' },
+	];
 
 	$: sorted = [...points].sort((a, b) => a.x - b.x);
 	$: pathD = curvePathData(points, W, H);
@@ -66,23 +76,21 @@
 
 	function startLongPress(e, pointIdx) {
 		clearLongPress();
-		if (e.pointerType !== 'touch') return;
+		if (e.pointerType !== 'touch' || pointIdx < 0) return;
 		longPressStart = { x: e.clientX, y: e.clientY };
 		longPressTimer = setTimeout(() => {
 			longPressTimer = null;
+			longPressStart = null;
 			dragging = null;
 			dragIdx = -1;
-			svg.releasePointerCapture(e.pointerId);
-
-			if (pointIdx >= 0) selected = pointIdx;
-
-			const { x: sx, y: sy } = svgCoords(e);
-			contextMenu = {
-				screenX: e.clientX,
-				screenY: e.clientY,
-				onPoint: pointIdx >= 0,
-				svgX: sx,
-				svgY: sy
+			dragRef = null;
+			removing = false;
+			didDrag = true;
+			selected = pointIdx;
+			orbitalMenu = {
+				cx: e.clientX,
+				cy: e.clientY,
+				activeItem: -1
 			};
 		}, LONG_PRESS_MS);
 	}
@@ -93,6 +101,64 @@
 			longPressTimer = null;
 		}
 		longPressStart = null;
+	}
+
+	function canDeleteSelected() {
+		if (selected < 0 || points.length <= 2) return false;
+		let s = [...points].sort((a, b) => a.x - b.x);
+		let si = s.indexOf(points[selected]);
+		return si > 0 && si < s.length - 1;
+	}
+
+	function updateOrbitalSelection(clientX, clientY) {
+		if (!orbitalMenu) return;
+		const dx = clientX - orbitalMenu.cx;
+		const dy = clientY - orbitalMenu.cy;
+		const dist = Math.sqrt(dx * dx + dy * dy);
+
+		if (dist < ORBITAL_DEAD_ZONE) {
+			if (orbitalMenu.activeItem !== -1) {
+				orbitalMenu.activeItem = -1;
+				orbitalMenu = orbitalMenu;
+			}
+			return;
+		}
+
+		const angle = Math.atan2(dy, dx);
+		const count = ORBITAL_ITEMS.length;
+		let best = -1;
+		let bestDiff = Infinity;
+		for (let i = 0; i < count; i++) {
+			const itemAngle = (i / count) * 2 * Math.PI - Math.PI / 2;
+			let diff = Math.abs(angle - itemAngle);
+			if (diff > Math.PI) diff = 2 * Math.PI - diff;
+			if (diff < bestDiff) {
+				bestDiff = diff;
+				best = i;
+			}
+		}
+
+		if (orbitalMenu.activeItem !== best) {
+			orbitalMenu.activeItem = best;
+			orbitalMenu = orbitalMenu;
+		}
+	}
+
+	function executeOrbitalAction() {
+		const idx = orbitalMenu?.activeItem ?? -1;
+		orbitalMenu = null;
+		if (idx < 0 || idx >= ORBITAL_ITEMS.length) return;
+
+		const item = ORBITAL_ITEMS[idx];
+		if (item.action === 'delete' && !canDeleteSelected()) return;
+
+		switch (item.action) {
+			case 'delete': contextDelete(); break;
+			case 'flatten': contextFlatten(); break;
+			case 'smooth': setInterpolation('cubic', 'auto'); break;
+			case 'linear': setInterpolation('linear'); break;
+			case 'step': setInterpolation('constant'); break;
+		}
 	}
 
 	function toNorm(sx, sy) {
@@ -152,6 +218,10 @@
 			if (Math.sqrt(dx * dx + dy * dy) > LONG_PRESS_MOVE_THRESHOLD) {
 				clearLongPress();
 			}
+		}
+		if (orbitalMenu) {
+			updateOrbitalSelection(e.clientX, e.clientY);
+			return;
 		}
 		if (!dragging) return;
 		didDrag = true;
@@ -234,6 +304,14 @@
 
 	function onPointerUp() {
 		clearLongPress();
+		if (orbitalMenu) {
+			executeOrbitalAction();
+			dragging = null;
+			dragIdx = -1;
+			dragRef = null;
+			removing = false;
+			return;
+		}
 		if (dragging === 'point') {
 			if (removing) {
 				points = points.filter((_, j) => j !== dragIdx);
@@ -249,12 +327,6 @@
 		dragIdx = -1;
 		dragRef = null;
 		removing = false;
-	}
-
-	function onSvgPointerDown(e) {
-		if (e.target === svg) {
-			startLongPress(e, -1);
-		}
 	}
 
 	function onSvgClick(e) {
@@ -319,6 +391,7 @@
 
 	function closeContextMenu() {
 		contextMenu = null;
+		orbitalMenu = null;
 	}
 
 	function contextAdd() {
@@ -540,7 +613,6 @@
 		class="curve-svg"
 		viewBox="0 0 {W} {H}"
 		bind:this={svg}
-		on:pointerdown={onSvgPointerDown}
 		on:pointermove={onPointerMove}
 		on:pointerup={onPointerUp}
 		on:lostpointercapture={onPointerUp}
@@ -611,17 +683,37 @@
 		on:click|stopPropagation
 	>
 		{#if contextMenu.onPoint && selected >= 0}
-			<button on:click={contextDelete} disabled={points.length <= 2}>Delete</button>
-			<button on:click={contextFlatten}>Flatten</button>
-			<div class="ctx-divider"></div>
 			<button on:click={() => setInterpolation('cubic', 'auto')}>Cubic Auto <span class="ctx-key">1</span></button>
 			<button on:click={() => setInterpolation('cubic', 'mirrored')}>Cubic Mirrored <span class="ctx-key">2</span></button>
 			<button on:click={() => setInterpolation('cubic', 'split')}>Cubic Split <span class="ctx-key">3</span></button>
 			<button on:click={() => setInterpolation('linear')}>Linear <span class="ctx-key">4</span></button>
 			<button on:click={() => setInterpolation('constant')}>Constant <span class="ctx-key">5</span></button>
+			<div class="ctx-divider"></div>
+			<button on:click={contextFlatten}>Flatten <span class="ctx-key">6</span></button>
+			<button on:click={contextDelete} disabled={points.length <= 2}>Delete</button>
 		{:else}
 			<button on:click={contextAdd}>Add Key</button>
 		{/if}
+	</div>
+{/if}
+
+{#if orbitalMenu}
+	<div use:portal class="orbital-overlay" style="position:fixed;z-index:99999;top:0;left:0;width:0;height:0" on:click|stopPropagation>
+		{#each ORBITAL_ITEMS as item, i}
+			{@const angle = (i / ORBITAL_ITEMS.length) * 2 * Math.PI - Math.PI / 2}
+			{@const ix = orbitalMenu.cx + ORBITAL_RADIUS * Math.cos(angle)}
+			{@const iy = orbitalMenu.cy + ORBITAL_RADIUS * Math.sin(angle)}
+			{@const isDisabled = item.action === 'delete' && !canDeleteSelected()}
+			<div
+				class="orbital-item"
+				class:active={orbitalMenu.activeItem === i && !isDisabled}
+				class:disabled={isDisabled}
+				class:danger={item.action === 'delete'}
+				style="position:fixed;left:{ix}px;top:{iy}px"
+			>
+				{item.label}
+			</div>
+		{/each}
 	</div>
 {/if}
 
@@ -835,5 +927,51 @@
 		color: var(--fg4);
 		font-size: 0.85em;
 		opacity: 0.6;
+	}
+
+	.orbital-overlay {
+		pointer-events: none;
+	}
+
+	.orbital-item {
+		pointer-events: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		transform: translate(-50%, -50%);
+		border-radius: 50%;
+		background: rgba(20, 20, 20, 0.92);
+		border: 1.5px solid rgba(255, 255, 255, 0.15);
+		color: var(--fg3);
+		font-size: 0.65em;
+		white-space: nowrap;
+		backdrop-filter: blur(6px);
+		transition: transform 0.1s, background 0.1s, color 0.1s, border-color 0.1s;
+	}
+
+	.orbital-item.active {
+		transform: translate(-50%, -50%) scale(1.18);
+		background: rgba(255, 255, 255, 0.15);
+		color: var(--fg1);
+		border-color: var(--accent);
+	}
+
+	.orbital-item.danger.active {
+		background: rgba(200, 50, 50, 0.25);
+		border-color: var(--red);
+		color: var(--red);
+	}
+
+	.orbital-item.disabled {
+		opacity: 0.3;
+	}
+
+	.orbital-item.disabled.active {
+		transform: translate(-50%, -50%);
+		background: rgba(20, 20, 20, 0.92);
+		border-color: rgba(255, 255, 255, 0.15);
+		color: var(--fg3);
 	}
 </style>
