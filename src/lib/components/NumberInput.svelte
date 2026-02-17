@@ -111,7 +111,7 @@
 		flex-direction: row;
 		align-items: stretch;
 		background: var(--bg0_h, #1d2021);
-		border-radius: 3px;
+		border-radius: var(--radius);
 		overflow: hidden;
 		font-size: 0.9em;
 		height: 1.6em;
@@ -126,7 +126,7 @@
 		width: 1.4em;
 		flex-shrink: 0;
 		margin: 1px;
-		border-radius: 0.25rem;
+		border-radius: var(--radius-sm);
 		background: var(--label-color-dim);
 		color: rgba(255, 255, 255, 0.9);
 		font-weight: bold;

@@ -64,7 +64,7 @@
 		width: 100%;
 		height: 1.4em;
 		background: var(--bg0_h, #1d2021);
-		border-radius: 3px;
+		border-radius: var(--radius);
 		cursor: pointer;
 		touch-action: none;
 		user-select: none;
@@ -75,7 +75,7 @@
 		top: 37.5%;
 		height: 25%;
 		background: color-mix(in srgb, var(--fill-color) 40%, transparent);
-		border-radius: 3px;
+		border-radius: var(--radius);
 		pointer-events: none;
 	}
 
@@ -84,7 +84,7 @@
 		top: 10%;
 		height: 80%;
 		width: 5px;
-		border-radius: 2px;
+		border-radius: var(--radius-sm);
 		background: var(--fg3, #bdae93);
 		transform: translateX(-50%);
 		cursor: ew-resize;

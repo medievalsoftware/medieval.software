@@ -114,6 +114,8 @@
 
 <style>
 	.p5-wrapper {
+		--radius: 3px;
+		--radius-sm: 2px;
 		display: flex;
 		flex-direction: row;
 		align-items: stretch;
@@ -193,7 +195,7 @@
 		padding: 0;
 		background: none;
 		border: none;
-		border-radius: 2px;
+		border-radius: var(--radius-sm);
 		color: var(--fg4);
 		font-size: 10px;
 		line-height: 1;
@@ -221,7 +223,7 @@
 		padding: 0;
 		background: none;
 		border: none;
-		border-radius: 2px;
+		border-radius: var(--radius-sm);
 		color: var(--fg4);
 		cursor: pointer;
 		opacity: 0.5;
@@ -362,7 +364,7 @@
 
 	.p5-props :global(fieldset) {
 		border: 1px solid rgba(255, 255, 255, 0.2);
-		border-radius: 3px;
+		border-radius: var(--radius);
 		margin: 0.4rem 0.5rem;
 		padding: 0;
 	}
@@ -380,7 +382,8 @@
 		border-bottom: none;
 	}
 
-	.p5-props :global(label) {
+	.p5-props :global(label),
+	.p5-props :global(.prop) {
 		display: grid;
 		grid-template-columns: 5rem 1fr;
 		align-items: center;
@@ -393,7 +396,8 @@
 		white-space: nowrap;
 	}
 
-	.p5-props :global(label:last-child) {
+	.p5-props :global(label:last-child),
+	.p5-props :global(.prop:last-child) {
 		border-bottom: none;
 	}
 
@@ -403,7 +407,7 @@
 		flex: 1;
 		min-width: 0;
 		height: 1.4em;
-		border-radius: 3px;
+		border-radius: var(--radius);
 		background: var(--bg0_h, #1d2021);
 		outline: none;
 		cursor: pointer;
@@ -414,7 +418,7 @@
 		appearance: none;
 		width: 5px;
 		height: 1.1em;
-		border-radius: 2px;
+		border-radius: var(--radius-sm);
 		background: var(--fg3, #bdae93);
 		cursor: pointer;
 		border: none;
@@ -423,7 +427,7 @@
 	.p5-props :global(input[type="range"]::-moz-range-thumb) {
 		width: 5px;
 		height: 1.1em;
-		border-radius: 2px;
+		border-radius: var(--radius-sm);
 		background: var(--fg3, #bdae93);
 		cursor: pointer;
 		border: none;
@@ -447,7 +451,7 @@
 
 	.p5-props :global(input[type="color"]::-webkit-color-swatch) {
 		border: none;
-		border-radius: 2px;
+		border-radius: var(--radius-sm);
 	}
 
 	.p5-props :global(select) {
@@ -458,7 +462,7 @@
 		background: var(--bg);
 		color: var(--fg2);
 		border: 1px solid var(--bg3);
-		border-radius: 3px;
+		border-radius: var(--radius);
 		font-size: 1em;
 		font-family: inherit;
 		cursor: pointer;
@@ -469,25 +473,25 @@
 		border-color: var(--orange);
 	}
 
-	.p5-props :global(button) {
+	.p5-props :global(.p5-control button) {
 		width: 100%;
 		padding: 0.35rem 0.5rem;
 		background: var(--bg1);
 		color: var(--fg2);
 		border: 1px solid var(--bg3);
-		border-radius: 3px;
+		border-radius: var(--radius);
 		font-size: 1em;
 		font-family: inherit;
 		cursor: pointer;
 		transition: background 0.1s, border-color 0.1s;
 	}
 
-	.p5-props :global(button:hover) {
+	.p5-props :global(.p5-control button:hover) {
 		background: var(--bg2);
 		border-color: var(--fg4);
 	}
 
-	.p5-props :global(button:active) {
+	.p5-props :global(.p5-control button:active) {
 		background: var(--bg3);
 	}
 
@@ -497,7 +501,7 @@
 		flex: 1;
 		gap: 0;
 		border: 1px solid var(--bg3);
-		border-radius: 3px;
+		border-radius: var(--radius);
 		overflow: hidden;
 	}
 
@@ -614,7 +618,8 @@
 			border-left: 1px solid var(--bg2);
 		}
 
-		.p5-props :global(label) {
+		.p5-props :global(label),
+		.p5-props :global(.prop) {
 			grid-template-columns: 5rem 1fr;
 			padding: 0.45rem 0.75rem;
 			min-height: 2.2em;
@@ -649,7 +654,7 @@
 			transform: translateX(14px);
 		}
 
-		.p5-props :global(button) {
+		.p5-props :global(.p5-control button) {
 			padding: 0.5rem 0.75rem;
 		}
 

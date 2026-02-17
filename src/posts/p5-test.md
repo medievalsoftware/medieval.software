@@ -13,23 +13,33 @@ import NumberInput from '$lib/components/NumberInput.svelte';
 import RangeSlider from '$lib/components/RangeSlider.svelte';
 import VecInput from '$lib/components/VecInput.svelte';
 import GradientEditor from '$lib/components/GradientEditor.svelte';
+import Prop from '$lib/components/Prop.svelte';
+import { loadProps, saveProps } from '$lib/persist.js';
 
 // -- Particle system --
 let ptab = 'emitter';
-let emitX = 0.5;
-let emitY = 0.75;
-let emitAngle = 270;
-let rate = 3;
-let spread = 30;
-let psize = 6;
-let lifetime = 80;
-let pcolor = '#fe8019';
-let fade = true;
-let gravityX = 0;
-let gravityY = 0.08;
-let initialSpeed = 3;
-let friction = 0.99;
+let {
+	emitX = 0.5,
+	emitY = 0.75,
+	emitAngle = 270,
+	rate = 3,
+	spread = 30,
+	psize = 6,
+	lifetime = 80,
+	pcolor = '#fe8019',
+	fade = true,
+	gravityX = 0,
+	gravityY = 0.08,
+	initialSpeed = 3,
+	friction = 0.99,
+} = loadProps('particle-emitter');
 let particleCount = 0;
+$: saveProps('particle-emitter', {
+	emitX, emitY, emitAngle,
+	rate, spread, psize, lifetime,
+	pcolor, fade,
+	gravityX, gravityY, initialSpeed, friction,
+});
 
 function particleSketch(p) {
   let particles = [];
@@ -82,13 +92,18 @@ function particleSketch(p) {
 }
 
 // -- Bouncing ball --
-let speed = 2;
-let size = 20;
-let trail = true;
-let color = '#fb4934';
-let shape = 'circle';
-let count = 1;
-let reset = 0;
+let {
+	speed = 2,
+	size = 20,
+	trail = true,
+	color = '#fb4934',
+	shape = 'circle',
+	count = 1,
+} = loadProps('bouncing-ball');
+$: saveProps('bouncing-ball', {
+	speed, size, trail,
+	color, shape, count,
+});
 
 function sketch(p) {
   let balls = [];
@@ -110,10 +125,6 @@ function sketch(p) {
   p.draw = () => {
     p.background(30, trail ? 25 : 255);
 
-    if (reset) {
-      balls = [];
-      reset = 0;
-    }
     while (balls.length < count) balls.push(makeBall());
     while (balls.length > count) balls.pop();
 
@@ -145,20 +156,28 @@ function sketch(p) {
 }
 
 // -- Terrain generator --
-let terrainStyle = 'filled';
-let heightLow = 20;
-let heightHigh = 80;
-let noiseScale = 0.012;
-let scrollSpeed = 0.8;
-let terrainLayers = 3;
-let terrainGradient = [
+const DEFAULT_GRADIENT = [
 	{ pos: 0, color: '#2d4a22' },
 	{ pos: 0.4, color: '#83a548' },
 	{ pos: 0.7, color: '#c8b47a' },
 	{ pos: 1, color: '#f0ead6' }
 ];
-let terrainAnimate = true;
+let {
+	terrainStyle = 'filled',
+	heightLow = 20,
+	heightHigh = 80,
+	noiseScale = 0.012,
+	scrollSpeed = 0.8,
+	terrainLayers = 3,
+	terrainGradient = structuredClone(DEFAULT_GRADIENT),
+	terrainAnimate = true,
+} = loadProps('terrain-generator');
 let terrainOffset = 0;
+$: saveProps('terrain-generator', {
+	terrainStyle, heightLow, heightHigh,
+	noiseScale, scrollSpeed, terrainLayers,
+	terrainGradient, terrainAnimate,
+});
 
 function sampleGradient(stops, t) {
 	let sorted = [...stops].sort((a, b) => a.pos - b.pos);
@@ -312,29 +331,29 @@ Test page for visualization tools and interactive components.
     <button class:active={ptab === 'physics'} on:click={() => ptab = 'physics'}>Physics</button>
   </div>
   {#if ptab === 'emitter'}
-    <label>Position <PositionPad bind:x={emitX} bind:y={emitY} /></label>
-    <label>Direction <AnglePicker bind:angle={emitAngle} style="width:5em" /></label>
-    <label>Rate <NumberInput bind:value={rate} label="i" color="blue" min={1} max={15} precision={0} sensitivity={0.5} /></label>
-    <label>Spread <NumberInput bind:value={spread} label="i" color="blue" min={1} max={90} precision={0} sensitivity={1} /></label>
+    <Prop name="Position" value={[emitX, emitY]} default={[0.5, 0.75]} reset={() => { emitX = 0.5; emitY = 0.75 }}><div class="p5-inline" style="align-items:stretch;padding:0;border:none"><PositionPad bind:x={emitX} bind:y={emitY} /><div style="display:flex;flex-direction:column;gap:2px;justify-content:center"><NumberInput bind:value={emitX} label="X" color="red" min={0} max={1} precision={2} sensitivity={0.005} /><NumberInput bind:value={emitY} label="Y" color="green" min={0} max={1} precision={2} sensitivity={0.005} /></div></div></Prop>
+    <Prop name="Direction" bind:value={emitAngle} default={270}><div class="p5-inline" style="align-items:center;padding:0;border:none"><AnglePicker bind:angle={emitAngle} style="width:3.5em" /><NumberInput bind:value={emitAngle} label="i" color="blue" min={0} max={360} precision={0} sensitivity={1} /></div></Prop>
+    <Prop name="Rate" bind:value={rate} default={3}><NumberInput bind:value={rate} label="i" color="blue" min={1} max={15} precision={0} sensitivity={0.5} /></Prop>
+    <Prop name="Spread" bind:value={spread} default={30}><NumberInput bind:value={spread} label="i" color="blue" min={1} max={90} precision={0} sensitivity={1} /></Prop>
   {/if}
   {#if ptab === 'particles'}
     <fieldset>
       <legend>Appearance</legend>
-      <label>Size <NumberInput bind:value={psize} label="i" color="blue" min={2} max={20} precision={0} sensitivity={0.5} /></label>
-      <label>Color <input type="color" bind:value={pcolor} /></label>
+      <Prop name="Size" bind:value={psize} default={6}><NumberInput bind:value={psize} label="i" color="blue" min={2} max={20} precision={0} sensitivity={0.5} /></Prop>
+      <Prop name="Color" bind:value={pcolor} default={'#fe8019'}><input type="color" bind:value={pcolor} /></Prop>
     </fieldset>
     <fieldset>
       <legend>Lifetime</legend>
-      <label>Duration <NumberInput bind:value={lifetime} label="i" color="blue" min={10} max={200} precision={0} sensitivity={1} /></label>
-      <label>Fade <input type="checkbox" bind:checked={fade} /></label>
+      <Prop name="Duration" bind:value={lifetime} default={80}><NumberInput bind:value={lifetime} label="i" color="blue" min={10} max={200} precision={0} sensitivity={1} /></Prop>
+      <Prop name="Fade" bind:value={fade} default={true}><input type="checkbox" bind:checked={fade} /></Prop>
     </fieldset>
   {/if}
   {#if ptab === 'physics'}
-    <label>Gravity <VecInput bind:x={gravityX} bind:y={gravityY} min={-0.5} max={0.5} sensitivity={0.005} precision={3} /></label>
+    <Prop name="Gravity" value={[gravityX, gravityY]} default={[0, 0.08]} reset={() => { gravityX = 0; gravityY = 0.08 }}><VecInput bind:x={gravityX} bind:y={gravityY} min={-0.5} max={0.5} sensitivity={0.005} precision={3} /></Prop>
     <fieldset>
       <legend>Motion</legend>
-      <label>Speed <NumberInput bind:value={initialSpeed} label="i" color="blue" min={1} max={10} precision={0} sensitivity={0.2} /></label>
-      <label>Friction <NumberInput bind:value={friction} label="f" color="orange" min={0.9} max={1} precision={3} sensitivity={0.001} /></label>
+      <Prop name="Speed" bind:value={initialSpeed} default={3}><NumberInput bind:value={initialSpeed} label="i" color="blue" min={1} max={10} precision={0} sensitivity={0.2} /></Prop>
+      <Prop name="Friction" bind:value={friction} default={0.99}><NumberInput bind:value={friction} label="f" color="orange" min={0.9} max={1} precision={3} sensitivity={0.001} /></Prop>
     </fieldset>
   {/if}
 </P5>
@@ -344,19 +363,18 @@ Test page for visualization tools and interactive components.
 # Bouncing Ball
 
 <P5 {sketch}>
-  <label>Speed <NumberInput bind:value={speed} label="i" color="blue" min={1} max={10} precision={0} sensitivity={0.2} /></label>
-  <label>Size <NumberInput bind:value={size} label="i" color="blue" min={5} max={80} precision={0} sensitivity={0.5} /></label>
-  <label>Count <NumberInput bind:value={count} label="i" color="blue" min={1} max={20} precision={0} sensitivity={0.5} /></label>
-  <label>Color <input type="color" bind:value={color} /></label>
-  <label>Trail <input type="checkbox" bind:checked={trail} /></label>
-  <label>Shape
+  <Prop name="Speed" bind:value={speed} default={2}><NumberInput bind:value={speed} label="i" color="blue" min={1} max={10} precision={0} sensitivity={0.2} /></Prop>
+  <Prop name="Size" bind:value={size} default={20}><NumberInput bind:value={size} label="i" color="blue" min={5} max={80} precision={0} sensitivity={0.5} /></Prop>
+  <Prop name="Count" bind:value={count} default={1}><NumberInput bind:value={count} label="i" color="blue" min={1} max={20} precision={0} sensitivity={0.5} /></Prop>
+  <Prop name="Color" bind:value={color} default={'#fb4934'}><input type="color" bind:value={color} /></Prop>
+  <Prop name="Trail" bind:value={trail} default={true}><input type="checkbox" bind:checked={trail} /></Prop>
+  <Prop name="Shape" bind:value={shape} default={'circle'}>
     <div class="p5-radio">
       <label><input type="radio" bind:group={shape} value="circle" /> Circle</label>
       <label><input type="radio" bind:group={shape} value="square" /> Square</label>
       <label><input type="radio" bind:group={shape} value="triangle" /> Triangle</label>
     </div>
-  </label>
-  <div class="p5-control"><button on:click={() => reset = 1}>Reset</button></div>
+  </Prop>
 </P5>
 
 ---
@@ -370,18 +388,18 @@ Test page for visualization tools and interactive components.
       <span class="p5-readout-value">{Math.round(terrainOffset)}</span>
     </div>
   </div>
-  <label>Style
+  <Prop name="Style" bind:value={terrainStyle} default={'filled'}>
     <select bind:value={terrainStyle}>
       <option value="filled">Filled</option>
       <option value="outline">Outline</option>
       <option value="dots">Dots</option>
       <option value="bars">Bars</option>
     </select>
-  </label>
-  <label>Height <RangeSlider bind:low={heightLow} bind:high={heightHigh} min={0} max={100} step={1} color="aqua" /></label>
-  <label>Scale <NumberInput bind:value={noiseScale} label="f" color="orange" min={0.001} max={0.05} precision={3} sensitivity={0.0002} /></label>
-  <label>Speed <NumberInput bind:value={scrollSpeed} label="f" color="orange" min={0} max={5} precision={1} sensitivity={0.05} /></label>
-  <label>Layers <NumberInput bind:value={terrainLayers} label="i" color="blue" min={1} max={6} precision={0} sensitivity={0.3} /></label>
-  <label>Gradient <GradientEditor bind:stops={terrainGradient} /></label>
-  <label>Animate <input type="checkbox" bind:checked={terrainAnimate} /></label>
+  </Prop>
+  <Prop name="Height" value={[heightLow, heightHigh]} default={[20, 80]} reset={() => { heightLow = 20; heightHigh = 80 }}><RangeSlider bind:low={heightLow} bind:high={heightHigh} min={0} max={100} step={1} color="aqua" /></Prop>
+  <Prop name="Scale" bind:value={noiseScale} default={0.012}><NumberInput bind:value={noiseScale} label="f" color="orange" min={0.001} max={0.05} precision={3} sensitivity={0.0002} /></Prop>
+  <Prop name="Speed" bind:value={scrollSpeed} default={0.8}><NumberInput bind:value={scrollSpeed} label="f" color="orange" min={0} max={5} precision={1} sensitivity={0.05} /></Prop>
+  <Prop name="Layers" bind:value={terrainLayers} default={3}><NumberInput bind:value={terrainLayers} label="i" color="blue" min={1} max={6} precision={0} sensitivity={0.3} /></Prop>
+  <Prop name="Gradient" value={terrainGradient} default={DEFAULT_GRADIENT} reset={() => terrainGradient = structuredClone(DEFAULT_GRADIENT)}><GradientEditor bind:stops={terrainGradient} /></Prop>
+  <Prop name="Animate" bind:value={terrainAnimate} default={true}><input type="checkbox" bind:checked={terrainAnimate} /></Prop>
 </P5>

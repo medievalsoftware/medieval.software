@@ -45,19 +45,18 @@
 >
 	<svg viewBox="0 0 100 100">
 		<circle cx="50" cy="50" r="44" class="ring" />
-		<circle cx="50" cy="50" r="1.5" class="center" />
-		<line x1="50" y1="50" x2={tipX} y2={tipY} class="arm" />
-		<circle cx={tipX} cy={tipY} r="3" class="knob" />
-
-		{#each [0, 90, 180, 270] as tick}
+		{#each Array.from({length: 24}, (_, i) => i * 15) as tick}
 			<line
-				x1={50 + Math.cos(tick * Math.PI / 180) * 40}
-				y1={50 + Math.sin(tick * Math.PI / 180) * 40}
+				x1={50 + Math.cos(tick * Math.PI / 180) * (tick % 90 === 0 ? 40 : 42)}
+				y1={50 + Math.sin(tick * Math.PI / 180) * (tick % 90 === 0 ? 40 : 42)}
 				x2={50 + Math.cos(tick * Math.PI / 180) * 44}
 				y2={50 + Math.sin(tick * Math.PI / 180) * 44}
-				class="tick"
+				class={tick % 90 === 0 ? 'tick' : 'tick-minor'}
 			/>
 		{/each}
+		<line x1="50" y1="50" x2={tipX} y2={tipY} class="arm" />
+		<circle cx="50" cy="50" r="1.5" class="center" />
+		<circle cx={tipX} cy={tipY} r="3" class="knob" />
 	</svg>
 </div>
 
@@ -101,6 +100,11 @@
 
 	.tick {
 		stroke: var(--bg4);
+		stroke-width: 1px;
+	}
+
+	.tick-minor {
+		stroke: rgba(255, 255, 255, 0.2);
 		stroke-width: 1px;
 	}
 </style>

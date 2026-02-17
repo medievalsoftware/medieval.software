@@ -159,7 +159,7 @@
 	.gradient-track {
 		width: 100%;
 		height: 1.4em;
-		border-radius: 3px;
+		border-radius: var(--radius);
 		cursor: crosshair;
 		touch-action: none;
 		user-select: none;
@@ -204,7 +204,7 @@
 		height: 1.2em;
 		padding: 0;
 		border: 1px solid var(--bg3, #665c54);
-		border-radius: 3px;
+		border-radius: var(--radius);
 		background: transparent;
 		cursor: pointer;
 		margin-top: 2px;

@@ -56,6 +56,12 @@
 	on:lostpointercapture={onPointerUp}
 	{...$$restProps}
 >
+	<svg class="pos-grid" viewBox="0 0 100 100" preserveAspectRatio="none">
+		{#each [25, 50, 75] as p}
+			<line x1={p} y1="0" x2={p} y2="100" class="grid-line" />
+			<line x1="0" y1={p} x2="100" y2={p} class="grid-line" />
+		{/each}
+	</svg>
 	{#if shape === 'circle'}
 		<div class="pos-ring"></div>
 	{/if}
@@ -71,11 +77,26 @@
 		aspect-ratio: 2 / 1;
 		background: var(--bg);
 		border: 1px solid var(--bg3);
-		border-radius: 3px;
+		border-radius: var(--radius);
 		cursor: crosshair;
 		overflow: hidden;
 		touch-action: none;
 		user-select: none;
+	}
+
+	.pos-grid {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+	}
+
+	.grid-line {
+		stroke: rgba(255, 255, 255, 0.08);
+		stroke-width: 1px;
+		stroke-dasharray: 3 3;
+		vector-effect: non-scaling-stroke;
 	}
 
 	.pos-pad.circle {
@@ -98,6 +119,7 @@
 		height: 1px;
 		background: rgba(255, 255, 255, 0.15);
 		pointer-events: none;
+		transform: translateY(-50%);
 	}
 
 	.pos-crosshair-v {
@@ -107,17 +129,17 @@
 		width: 1px;
 		background: rgba(255, 255, 255, 0.15);
 		pointer-events: none;
+		transform: translateX(-50%);
 	}
 
 	.pos-dot {
 		position: absolute;
-		width: 10px;
-		height: 10px;
+		width: 6px;
+		height: 6px;
 		border-radius: 50%;
 		background: var(--orange);
-		border: 2px solid var(--bg);
+		border: none;
 		transform: translate(-50%, -50%);
 		pointer-events: none;
-		box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
 	}
 </style>
