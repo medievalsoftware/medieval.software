@@ -124,7 +124,7 @@
 				on:pointerdown={(e) => onStopPointerDown(e, i)}
 			>
 				<svg class="stop-marker" viewBox="0 0 10 8" xmlns="http://www.w3.org/2000/svg">
-					<path d="M5 0L10 8H0Z" fill="var(--stop-color)" stroke="black" stroke-width="1" stroke-linejoin="round" />
+					<path d="M5 0L10 8H0Z" fill="var(--stop-color)" stroke="var(--bg_h)" stroke-width="1" stroke-linejoin="round" />
 				</svg>
 			</div>
 		{/each}
@@ -156,7 +156,7 @@
 		cursor: crosshair;
 		touch-action: none;
 		user-select: none;
-		border: 1px solid var(--bg3);
+		border: 1px solid var(--bg_h);
 	}
 
 	.gradient-stops {
@@ -200,7 +200,7 @@
 		width: 1.6em;
 		height: 1.2em;
 		padding: 0;
-		border: 1px solid var(--bg3);
+		border: 1px solid var(--bg_h);
 		border-radius: var(--radius);
 		background: transparent;
 		cursor: pointer;

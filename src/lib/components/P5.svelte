@@ -407,7 +407,7 @@
 		min-width: 0;
 		height: 1.4em;
 		border-radius: var(--radius);
-		background: var(--bg0_h);
+		background: var(--bg_h);
 		outline: none;
 		cursor: pointer;
 	}
@@ -437,7 +437,7 @@
 		appearance: none;
 		width: 28px;
 		height: 20px;
-		border: 2px solid var(--bg3);
+		border: 2px solid var(--bg_h);
 		border-radius: 4px;
 		background: none;
 		cursor: pointer;

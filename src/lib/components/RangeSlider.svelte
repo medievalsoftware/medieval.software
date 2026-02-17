@@ -64,7 +64,7 @@
 		position: relative;
 		width: 100%;
 		height: 1.4em;
-		background: var(--bg0_h);
+		background: transparent;
 		border-radius: var(--radius);
 		cursor: pointer;
 		touch-action: none;
@@ -77,7 +77,7 @@
 		height: 25%;
 		left: 0;
 		right: 0;
-		background: var(--bg1);
+		background: var(--bg_h);
 		border-radius: var(--radius);
 		pointer-events: none;
 	}

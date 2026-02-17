@@ -110,7 +110,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: stretch;
-		background: var(--bg0_h);
+		background: var(--bg_h);
 		border-radius: var(--radius);
 		overflow: hidden;
 		font-size: 0.9em;
