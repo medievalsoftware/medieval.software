@@ -181,8 +181,8 @@ $: saveProps('terrain-generator', {
 function sampleGradient(stops, t) {
 	let sorted = [...stops].sort((a, b) => a.pos - b.pos);
 	t = Math.max(0, Math.min(1, t));
-	if (t <= sorted[0].pos) return sorted[0].color;
-	if (t >= sorted[sorted.length - 1].pos) return sorted[sorted.length - 1].color;
+	if (t <= sorted[0].pos) { let c = sorted[0].color; return [parseInt(c.slice(1,3),16), parseInt(c.slice(3,5),16), parseInt(c.slice(5,7),16)]; }
+	if (t >= sorted[sorted.length - 1].pos) { let c = sorted[sorted.length - 1].color; return [parseInt(c.slice(1,3),16), parseInt(c.slice(3,5),16), parseInt(c.slice(5,7),16)]; }
 	for (let i = 0; i < sorted.length - 1; i++) {
 		if (t >= sorted[i].pos && t <= sorted[i + 1].pos) {
 			let frac = (t - sorted[i].pos) / (sorted[i + 1].pos - sorted[i].pos);
