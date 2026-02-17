@@ -172,7 +172,6 @@ let {
 	terrainGradient = structuredClone(DEFAULT_GRADIENT),
 	terrainAnimate = true,
 } = loadProps('terrain-generator');
-let terrainOffset = 0;
 $: saveProps('terrain-generator', {
 	terrainStyle, heightLow, heightHigh,
 	noiseScale, scrollSpeed, terrainLayers,
@@ -300,8 +299,6 @@ function terrainSketch(p) {
 
   p.draw = () => {
     if (terrainAnimate) offset += scrollSpeed;
-    terrainOffset = offset;
-
     let params = `${heightLow},${heightHigh},${noiseScale},${terrainLayers},${terrainStyle},${offset.toFixed(2)},${JSON.stringify(terrainGradient)}`;
     if (params !== lastParams) {
       lastParams = params;
@@ -382,12 +379,6 @@ Test page for visualization tools and interactive components.
 # Terrain Generator
 
 <P5 sketch={terrainSketch}>
-  <div slot="overlay">
-    <div class="p5-readout">
-      <span class="p5-readout-label">Offset</span>
-      <span class="p5-readout-value">{Math.round(terrainOffset)}</span>
-    </div>
-  </div>
   <Prop name="Style" bind:value={terrainStyle} default={'filled'}>
     <select bind:value={terrainStyle}>
       <option value="filled">Filled</option>
