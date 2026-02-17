@@ -1,0 +1,14 @@
+[Unit]
+Description=Deploy Webhook
+After=network.target
+
+[Service]
+ExecStart=/home/dane/.bun/bin/bun run /home/dane/medieval.software/deploy/webhook.js
+EnvironmentFile=/home/dane/.config/deploy.env
+WorkingDirectory=/home/dane/medieval.software
+User=dane
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
