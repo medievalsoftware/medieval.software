@@ -13,9 +13,11 @@ import NumberInput from '$lib/components/NumberInput.svelte';
 import RangeSlider from '$lib/components/RangeSlider.svelte';
 import VecInput from '$lib/components/VecInput.svelte';
 import GradientEditor from '$lib/components/GradientEditor.svelte';
+import CurveEditor from '$lib/components/CurveEditor.svelte';
 import Prop from '$lib/components/Prop.svelte';
 import { loadProps, saveProps } from '$lib/persist.js';
 import { hexToRgb } from '$lib/color.js';
+import { sampleCurve } from '$lib/curve.js';
 
 // -- Particle system --
 let ptab = 'emitter';
@@ -195,6 +197,85 @@ function sampleGradient(stops, t) {
 		}
 	}
 	return hexToRgb(sorted[0].color);
+}
+
+// -- Easing visualizer --
+const DEFAULT_EASING = [
+	{ x: 0, y: 0, interpolation: 'cubic', tangentIn: 0, tangentOut: 0.5, tangentMode: 'mirrored' },
+	{ x: 1, y: 1, interpolation: 'cubic', tangentIn: 0.5, tangentOut: 0, tangentMode: 'mirrored' }
+];
+let {
+	easingPoints = structuredClone(DEFAULT_EASING),
+	easingDuration = 120,
+	easingCount = 5,
+	easingTrail = true,
+} = loadProps('easing-visualizer');
+$: saveProps('easing-visualizer', { easingPoints, easingDuration, easingCount, easingTrail });
+
+function easingSketch(p) {
+	let frame = 0;
+	let buf;
+
+	p.setup = () => {
+		p.createCanvas(600, 300);
+		buf = p.createGraphics(p.width, p.height);
+		buf.pixelDensity(1);
+		buf.background(30);
+	};
+
+	p.draw = () => {
+		frame++;
+		let w = p.width;
+		let h = p.height;
+		let margin = 30;
+		let usableW = w - margin * 2;
+		let usableH = h - margin * 2;
+
+		// Fade trail buffer toward bg(30) with guaranteed convergence
+		if (easingTrail) {
+			buf.loadPixels();
+			let px = buf.pixels;
+			for (let i = 0; i < px.length; i += 4) {
+				let d;
+				d = 30 - px[i];   if (d) { let s = d >> 3; px[i]   += s || (d > 0 ? 1 : -1); }
+				d = 30 - px[i+1]; if (d) { let s = d >> 3; px[i+1] += s || (d > 0 ? 1 : -1); }
+				d = 30 - px[i+2]; if (d) { let s = d >> 3; px[i+2] += s || (d > 0 ? 1 : -1); }
+			}
+			buf.updatePixels();
+		} else {
+			buf.background(30);
+		}
+
+		// Draw objects onto trail buffer
+		buf.noStroke();
+		for (let i = 0; i < easingCount; i++) {
+			let phase = easingCount > 1 ? i / (easingCount - 1) : 0;
+			let rawT = ((frame + phase * easingDuration) % (easingDuration * 2)) / easingDuration;
+			let t = rawT <= 1 ? rawT : 2 - rawT;
+			let eased = sampleCurve(easingPoints, t);
+			let x = margin + eased * usableW;
+			let y = margin + (i / Math.max(easingCount - 1, 1)) * usableH;
+			if (easingCount === 1) y = h / 2;
+			let alpha = p.map(i, 0, Math.max(easingCount - 1, 1), 255, 120);
+			buf.fill(142, 192, 124, alpha);
+			buf.circle(x, y, 10);
+		}
+
+		// Composite: buffer + curve reference on top
+		p.background(30);
+		p.image(buf, 0, 0);
+
+		p.stroke(142, 192, 124, 30);
+		p.strokeWeight(1);
+		p.noFill();
+		p.beginShape();
+		for (let i = 0; i <= 50; i++) {
+			let t = i / 50;
+			let val = sampleCurve(easingPoints, t);
+			p.vertex(margin + t * usableW, h - margin - val * usableH);
+		}
+		p.endShape();
+	};
 }
 
 function terrainSketch(p) {
@@ -385,4 +466,23 @@ Test page for visualization tools and interactive components.
   <Prop name="Layers" bind:value={terrainLayers} default={3}><NumberInput bind:value={terrainLayers} label="i" color="blue" min={1} max={6} precision={0} sensitivity={0.3} /></Prop>
   <Prop name="Gradient" value={terrainGradient} default={DEFAULT_GRADIENT} reset={() => terrainGradient = structuredClone(DEFAULT_GRADIENT)}><GradientEditor bind:stops={terrainGradient} /></Prop>
   <Prop name="Animate" bind:value={terrainAnimate} default={true}><input type="checkbox" bind:checked={terrainAnimate} /></Prop>
+</P5>
+
+---
+
+# Easing Visualizer
+
+<P5 sketch={easingSketch}>
+  <Prop name="Curve" value={easingPoints} default={DEFAULT_EASING} reset={() => easingPoints = structuredClone(DEFAULT_EASING)}>
+    <CurveEditor bind:points={easingPoints} color="aqua" />
+  </Prop>
+  <Prop name="Duration" bind:value={easingDuration} default={120}>
+    <NumberInput bind:value={easingDuration} label="i" color="blue" min={30} max={600} precision={0} sensitivity={2} />
+  </Prop>
+  <Prop name="Objects" bind:value={easingCount} default={5}>
+    <NumberInput bind:value={easingCount} label="i" color="blue" min={1} max={20} precision={0} sensitivity={0.5} />
+  </Prop>
+  <Prop name="Trail" bind:value={easingTrail} default={true}>
+    <input type="checkbox" bind:checked={easingTrail} />
+  </Prop>
 </P5>
