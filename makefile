@@ -1,3 +1,5 @@
+.PHONY: build run
+
 build:
 	bun install
 	bun run build
