@@ -603,8 +603,7 @@
 		}
 
 		.p5-props {
-			max-width: 32rem;
-			margin: 0 auto;
+			flex-grow: 1;
 			font-size: 0.95em;
 		}
 
@@ -619,7 +618,7 @@
 
 		.p5-props :global(label),
 		.p5-props :global(.prop) {
-			grid-template-columns: 5rem 1fr;
+			grid-template-columns: 5.5rem 1fr;
 			padding: 0.45rem 0.75rem;
 			min-height: 2.2em;
 		}

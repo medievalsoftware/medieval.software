@@ -28,6 +28,11 @@
 	let presetOpen = false;
 	let wrapper;
 
+	let longPressTimer = null;
+	const LONG_PRESS_MS = 500;
+	const LONG_PRESS_MOVE_THRESHOLD = 8;
+	let longPressStart = null;
+
 	$: sorted = [...points].sort((a, b) => a.x - b.x);
 	$: pathD = curvePathData(points, W, H);
 	$: selectedPoint = selected >= 0 && selected < points.length ? points[selected] : null;
@@ -57,6 +62,37 @@
 			x: ((e.clientX - rect.left) / rect.width) * W,
 			y: ((e.clientY - rect.top) / rect.height) * H
 		};
+	}
+
+	function startLongPress(e, pointIdx) {
+		clearLongPress();
+		if (e.pointerType !== 'touch') return;
+		longPressStart = { x: e.clientX, y: e.clientY };
+		longPressTimer = setTimeout(() => {
+			longPressTimer = null;
+			dragging = null;
+			dragIdx = -1;
+			svg.releasePointerCapture(e.pointerId);
+
+			if (pointIdx >= 0) selected = pointIdx;
+
+			const { x: sx, y: sy } = svgCoords(e);
+			contextMenu = {
+				screenX: e.clientX,
+				screenY: e.clientY,
+				onPoint: pointIdx >= 0,
+				svgX: sx,
+				svgY: sy
+			};
+		}, LONG_PRESS_MS);
+	}
+
+	function clearLongPress() {
+		if (longPressTimer) {
+			clearTimeout(longPressTimer);
+			longPressTimer = null;
+		}
+		longPressStart = null;
 	}
 
 	function toNorm(sx, sy) {
@@ -97,6 +133,7 @@
 		removing = false;
 		didDrag = false;
 		svg.setPointerCapture(e.pointerId);
+		startLongPress(e, i);
 	}
 
 	function onTangentPointerDown(e, i, which) {
@@ -109,6 +146,13 @@
 	}
 
 	function onPointerMove(e) {
+		if (longPressStart) {
+			const dx = e.clientX - longPressStart.x;
+			const dy = e.clientY - longPressStart.y;
+			if (Math.sqrt(dx * dx + dy * dy) > LONG_PRESS_MOVE_THRESHOLD) {
+				clearLongPress();
+			}
+		}
 		if (!dragging) return;
 		didDrag = true;
 
@@ -189,6 +233,7 @@
 	}
 
 	function onPointerUp() {
+		clearLongPress();
 		if (dragging === 'point') {
 			if (removing) {
 				points = points.filter((_, j) => j !== dragIdx);
@@ -204,6 +249,12 @@
 		dragIdx = -1;
 		dragRef = null;
 		removing = false;
+	}
+
+	function onSvgPointerDown(e) {
+		if (e.target === svg) {
+			startLongPress(e, -1);
+		}
 	}
 
 	function onSvgClick(e) {
@@ -489,6 +540,7 @@
 		class="curve-svg"
 		viewBox="0 0 {W} {H}"
 		bind:this={svg}
+		on:pointerdown={onSvgPointerDown}
 		on:pointermove={onPointerMove}
 		on:pointerup={onPointerUp}
 		on:lostpointercapture={onPointerUp}
@@ -645,6 +697,7 @@
 
 	.curve-svg {
 		width: 100%;
+		max-width: 32rem;
 		aspect-ratio: 1;
 		background: var(--bg);
 		border: 1px solid var(--bg_h);
