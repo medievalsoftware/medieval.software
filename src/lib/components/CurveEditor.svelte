@@ -1,5 +1,6 @@
 <script>
 	import { sampleCurve, autoTangent } from '$lib/curve.js';
+	import { portal, clampToViewport } from '$lib/actions.js';
 
 	/** @type {import('$lib/curve.js').Keyframe[]} */
 	export let points = [
@@ -471,10 +472,6 @@
 		presetOpen = false;
 	}
 
-	function portal(node) {
-		document.body.appendChild(node);
-		return { destroy() { node.remove(); } };
-	}
 
 	function shouldShowTangents(point, idx) {
 		if (idx !== selected) return false;
@@ -612,6 +609,7 @@
 {#if contextMenu}
 	<div
 		use:portal
+		use:clampToViewport
 		class="curve-context-menu"
 		style="position:fixed;z-index:99999;top:{contextMenu.screenY}px;left:{contextMenu.screenX}px"
 		on:click|stopPropagation

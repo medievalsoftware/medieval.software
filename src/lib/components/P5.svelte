@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import { portal } from '$lib/actions.js';
 
 	/** @type {(p: import('p5')) => void} */
 	export let sketch;
@@ -39,11 +40,6 @@
 
 	function onWindowClick() {
 		cornerPopover = false;
-	}
-
-	function portal(node) {
-		document.body.appendChild(node);
-		return { destroy() { node.remove(); } };
 	}
 
 	onMount(async () => {

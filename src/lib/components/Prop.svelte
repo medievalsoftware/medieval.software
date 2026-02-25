@@ -1,5 +1,6 @@
 <script>
 	import { onDestroy } from 'svelte';
+	import { portal, clampToViewport } from '$lib/actions.js';
 
 	/** @type {string} */
 	export let name;
@@ -39,11 +40,6 @@
 		tipVisible = true;
 	}
 
-	function portal(node) {
-		document.body.appendChild(node);
-		return { destroy() { node.remove(); } };
-	}
-
 	onDestroy(() => clearTimeout(tipTimer));
 
 	$: dirty = value !== undefined && defaultValue !== undefined
@@ -80,7 +76,7 @@
 </div>
 
 {#if tipVisible && tip}
-	<span use:portal class="prop-tip" style="top:{tipPos.top}px;left:{tipPos.left}px">{tip}</span>
+	<span use:portal use:clampToViewport class="prop-tip" style="top:{tipPos.top}px;left:{tipPos.left}px">{tip}</span>
 {/if}
 
 <style>
