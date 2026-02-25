@@ -1,9 +1,15 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, setContext } from 'svelte';
+	import { writable } from 'svelte/store';
 	import { portal } from '$lib/actions.js';
 
 	/** @type {(p: import('p5')) => void} */
 	export let sketch;
+
+	const resetAllSignal = writable(0);
+	const dirtyCount = writable(0);
+	setContext('p5-reset-all', resetAllSignal);
+	setContext('p5-dirty-count', dirtyCount);
 
 	let container;
 	let instance;
@@ -91,7 +97,15 @@
 	</div>
 	{#if $$slots.default}
 		<div class="p5-panel">
-			<span class="p5-panel-header">Properties</span>
+			<div class="p5-panel-header">
+				<span>Properties</span>
+				<button class="p5-reset-all" class:visible={$dirtyCount > 0} on:click={() => resetAllSignal.update(n => n + 1)} title="Reset all to defaults">
+					<svg viewBox="0 0 10 10" width="10" height="10">
+						<path d="M2 3.5 A3.2 3.2 0 1 1 3 8" stroke="currentColor" stroke-width="1.4" fill="none"/>
+						<path d="M0.5 2 L2 4 L3.8 2.2" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
+					</svg>
+				</button>
+			</div>
 			<div class="p5-props">
 				<slot />
 			</div>
@@ -258,6 +272,9 @@
 	}
 
 	.p5-panel-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 		font-size: 0.7em;
 		font-weight: bold;
 		color: var(--fg4);
@@ -265,6 +282,31 @@
 		letter-spacing: 0.05em;
 		padding: 0.5rem 0.75rem;
 		border-bottom: 1px solid var(--bg2);
+	}
+
+	.p5-reset-all {
+		all: unset;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 16px;
+		height: 16px;
+		border-radius: var(--radius);
+		color: var(--fg4);
+		cursor: pointer;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.1s, color 0.1s;
+	}
+
+	.p5-reset-all.visible {
+		opacity: 0.4;
+		pointer-events: auto;
+	}
+
+	.p5-reset-all.visible:hover {
+		opacity: 1;
+		color: var(--orange);
 	}
 
 	.p5-props {

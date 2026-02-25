@@ -1,5 +1,5 @@
 <script>
-	import { onDestroy } from 'svelte';
+	import { onDestroy, getContext } from 'svelte';
 	import { portal, clampToViewport } from '$lib/actions.js';
 
 	/** @type {string} */
@@ -40,10 +40,31 @@
 		tipVisible = true;
 	}
 
-	onDestroy(() => clearTimeout(tipTimer));
+	const resetAllSignal = getContext('p5-reset-all');
+	const dirtyCount = getContext('p5-dirty-count');
+	let resetGeneration = 0;
+	const unsub = resetAllSignal?.subscribe(v => {
+		if (v > resetGeneration) {
+			resetGeneration = v;
+			doReset();
+		}
+	});
+
+	let wasDirty = false;
+
+	onDestroy(() => {
+		clearTimeout(tipTimer);
+		unsub?.();
+		if (wasDirty) dirtyCount?.update(n => n - 1);
+	});
 
 	$: dirty = value !== undefined && defaultValue !== undefined
 		&& JSON.stringify(value) !== JSON.stringify(defaultValue);
+
+	$: if (dirtyCount) {
+		if (dirty && !wasDirty) { dirtyCount.update(n => n + 1); wasDirty = true; }
+		if (!dirty && wasDirty) { dirtyCount.update(n => n - 1); wasDirty = false; }
+	}
 
 	function doReset() {
 		if (reset) {
