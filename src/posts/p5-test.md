@@ -555,29 +555,29 @@ Test page for visualization tools and interactive components.
     <button class:active={ptab === 'physics'} on:click={() => ptab = 'physics'}>Physics</button>
   </div>
   {#if ptab === 'emitter'}
-    <Prop name="Position" value={[emitX, emitY]} default={[0.5, 0.75]} reset={() => { emitX = 0.5; emitY = 0.75 }}><div class="p5-inline" style="align-items:stretch;padding:0;border:none"><PositionPad bind:x={emitX} bind:y={emitY} /><div style="display:flex;flex-direction:column;gap:2px;justify-content:center"><NumberInput bind:value={emitX} label="X" color="red" min={0} max={1} precision={2} sensitivity={0.005} /><NumberInput bind:value={emitY} label="Y" color="green" min={0} max={1} precision={2} sensitivity={0.005} /></div></div></Prop>
-    <Prop name="Direction" bind:value={emitAngle} default={270}><div class="p5-inline" style="align-items:center;padding:0;border:none"><AnglePicker bind:angle={emitAngle} style="width:3.5em" /><NumberInput bind:value={emitAngle} label="i" color="blue" min={0} max={360} precision={0} sensitivity={1} /></div></Prop>
-    <Prop name="Rate" bind:value={rate} default={3}><NumberInput bind:value={rate} label="i" color="blue" min={1} max={15} precision={0} sensitivity={0.5} /></Prop>
-    <Prop name="Spread" bind:value={spread} default={30}><NumberInput bind:value={spread} label="i" color="blue" min={1} max={90} precision={0} sensitivity={1} /></Prop>
+    <Prop name="Position" tip="Emitter location on the canvas" value={[emitX, emitY]} default={[0.5, 0.75]} reset={() => { emitX = 0.5; emitY = 0.75 }}><div class="p5-inline" style="align-items:stretch;padding:0;border:none"><PositionPad bind:x={emitX} bind:y={emitY} /><div style="display:flex;flex-direction:column;gap:2px;justify-content:center"><NumberInput bind:value={emitX} label="X" color="red" min={0} max={1} precision={2} sensitivity={0.005} /><NumberInput bind:value={emitY} label="Y" color="green" min={0} max={1} precision={2} sensitivity={0.005} /></div></div></Prop>
+    <Prop name="Direction" tip="Angle particles are emitted toward" bind:value={emitAngle} default={270}><div class="p5-inline" style="align-items:center;padding:0;border:none"><AnglePicker bind:angle={emitAngle} style="width:3.5em" /><NumberInput bind:value={emitAngle} label="i" color="blue" min={0} max={360} precision={0} sensitivity={1} /></div></Prop>
+    <Prop name="Rate" tip="Particles spawned per frame" bind:value={rate} default={3}><NumberInput bind:value={rate} label="i" color="blue" min={1} max={15} precision={0} sensitivity={0.5} /></Prop>
+    <Prop name="Spread" tip="Random cone angle around the direction" bind:value={spread} default={30}><NumberInput bind:value={spread} label="i" color="blue" min={1} max={90} precision={0} sensitivity={1} /></Prop>
   {/if}
   {#if ptab === 'particles'}
     <fieldset>
       <legend>Appearance</legend>
-      <Prop name="Size" bind:value={psize} default={6}><NumberInput bind:value={psize} label="i" color="blue" min={2} max={20} precision={0} sensitivity={0.5} /></Prop>
-      <Prop name="Color" bind:value={pcolor} default={'#fe8019'}><input type="color" bind:value={pcolor} /></Prop>
+      <Prop name="Size" tip="Diameter of each particle" bind:value={psize} default={6}><NumberInput bind:value={psize} label="i" color="blue" min={2} max={20} precision={0} sensitivity={0.5} /></Prop>
+      <Prop name="Color" tip="Particle fill color" bind:value={pcolor} default={'#fe8019'}><input type="color" bind:value={pcolor} /></Prop>
     </fieldset>
     <fieldset>
       <legend>Lifetime</legend>
-      <Prop name="Duration" bind:value={lifetime} default={80}><NumberInput bind:value={lifetime} label="i" color="blue" min={10} max={200} precision={0} sensitivity={1} /></Prop>
-      <Prop name="Fade" bind:value={fade} default={true}><input type="checkbox" bind:checked={fade} /></Prop>
+      <Prop name="Duration" tip="Frames before a particle dies" bind:value={lifetime} default={80}><NumberInput bind:value={lifetime} label="i" color="blue" min={10} max={200} precision={0} sensitivity={1} /></Prop>
+      <Prop name="Fade" tip="Fade opacity over lifetime" bind:value={fade} default={true}><input type="checkbox" bind:checked={fade} /></Prop>
     </fieldset>
   {/if}
   {#if ptab === 'physics'}
-    <Prop name="Gravity" value={[gravityX, gravityY]} default={[0, 0.08]} reset={() => { gravityX = 0; gravityY = 0.08 }}><VecInput bind:x={gravityX} bind:y={gravityY} min={-0.5} max={0.5} sensitivity={0.005} precision={3} /></Prop>
+    <Prop name="Gravity" tip="Constant force applied each frame" value={[gravityX, gravityY]} default={[0, 0.08]} reset={() => { gravityX = 0; gravityY = 0.08 }}><VecInput bind:x={gravityX} bind:y={gravityY} min={-0.5} max={0.5} sensitivity={0.005} precision={3} /></Prop>
     <fieldset>
       <legend>Motion</legend>
-      <Prop name="Speed" bind:value={initialSpeed} default={3}><NumberInput bind:value={initialSpeed} label="i" color="blue" min={1} max={10} precision={0} sensitivity={0.2} /></Prop>
-      <Prop name="Friction" bind:value={friction} default={0.99}><NumberInput bind:value={friction} label="f" color="orange" min={0.9} max={1} precision={3} sensitivity={0.001} /></Prop>
+      <Prop name="Speed" tip="Initial velocity when emitted" bind:value={initialSpeed} default={3}><NumberInput bind:value={initialSpeed} label="i" color="blue" min={1} max={10} precision={0} sensitivity={0.2} /></Prop>
+      <Prop name="Friction" tip="Velocity multiplier per frame (1 = none)" bind:value={friction} default={0.99}><NumberInput bind:value={friction} label="f" color="orange" min={0.9} max={1} precision={3} sensitivity={0.001} /></Prop>
     </fieldset>
   {/if}
 </P5>
@@ -587,12 +587,12 @@ Test page for visualization tools and interactive components.
 # Bouncing Ball
 
 <P5 {sketch}>
-  <Prop name="Speed" bind:value={speed} default={2}><NumberInput bind:value={speed} label="i" color="blue" min={1} max={10} precision={0} sensitivity={0.2} /></Prop>
-  <Prop name="Size" bind:value={size} default={20}><NumberInput bind:value={size} label="i" color="blue" min={5} max={80} precision={0} sensitivity={0.5} /></Prop>
-  <Prop name="Count" bind:value={count} default={1}><NumberInput bind:value={count} label="i" color="blue" min={1} max={20} precision={0} sensitivity={0.5} /></Prop>
-  <Prop name="Color" bind:value={color} default={'#fb4934'}><input type="color" bind:value={color} /></Prop>
-  <Prop name="Trail" bind:value={trail} default={true}><input type="checkbox" bind:checked={trail} /></Prop>
-  <Prop name="Shape" bind:value={shape} default={'circle'}>
+  <Prop name="Speed" tip="Movement speed multiplier" bind:value={speed} default={2}><NumberInput bind:value={speed} label="i" color="blue" min={1} max={10} precision={0} sensitivity={0.2} /></Prop>
+  <Prop name="Size" tip="Ball diameter in pixels" bind:value={size} default={20}><NumberInput bind:value={size} label="i" color="blue" min={5} max={80} precision={0} sensitivity={0.5} /></Prop>
+  <Prop name="Count" tip="Number of bouncing balls" bind:value={count} default={1}><NumberInput bind:value={count} label="i" color="blue" min={1} max={20} precision={0} sensitivity={0.5} /></Prop>
+  <Prop name="Color" tip="Ball fill color" bind:value={color} default={'#fb4934'}><input type="color" bind:value={color} /></Prop>
+  <Prop name="Trail" tip="Leave fading motion trail" bind:value={trail} default={true}><input type="checkbox" bind:checked={trail} /></Prop>
+  <Prop name="Shape" tip="Geometry used for each ball" bind:value={shape} default={'circle'}>
     <div class="p5-radio">
       <label><input type="radio" bind:group={shape} value="circle" /> Circle</label>
       <label><input type="radio" bind:group={shape} value="square" /> Square</label>
@@ -606,7 +606,7 @@ Test page for visualization tools and interactive components.
 # Terrain Generator
 
 <P5 sketch={terrainSketch}>
-  <Prop name="Style" bind:value={terrainStyle} default={'filled'}>
+  <Prop name="Style" tip="Rendering mode for the terrain" bind:value={terrainStyle} default={'filled'}>
     <select bind:value={terrainStyle}>
       <option value="filled">Filled</option>
       <option value="outline">Outline</option>
@@ -614,12 +614,12 @@ Test page for visualization tools and interactive components.
       <option value="bars">Bars</option>
     </select>
   </Prop>
-  <Prop name="Height" value={[heightLow, heightHigh]} default={[20, 80]} reset={() => { heightLow = 20; heightHigh = 80 }}><RangeSlider bind:low={heightLow} bind:high={heightHigh} min={0} max={100} step={1} color="aqua" /></Prop>
-  <Prop name="Scale" bind:value={noiseScale} default={0.012}><NumberInput bind:value={noiseScale} label="f" color="orange" min={0.001} max={0.05} precision={3} sensitivity={0.0002} /></Prop>
-  <Prop name="Speed" bind:value={scrollSpeed} default={0.8}><NumberInput bind:value={scrollSpeed} label="f" color="orange" min={0} max={5} precision={1} sensitivity={0.05} /></Prop>
-  <Prop name="Layers" bind:value={terrainLayers} default={3}><NumberInput bind:value={terrainLayers} label="i" color="blue" min={1} max={6} precision={0} sensitivity={0.3} /></Prop>
-  <Prop name="Gradient" value={terrainGradient} default={DEFAULT_GRADIENT} reset={() => terrainGradient = structuredClone(DEFAULT_GRADIENT)}><GradientEditor bind:stops={terrainGradient} /></Prop>
-  <Prop name="Animate" bind:value={terrainAnimate} default={true}><input type="checkbox" bind:checked={terrainAnimate} /></Prop>
+  <Prop name="Height" tip="Min and max terrain height range" value={[heightLow, heightHigh]} default={[20, 80]} reset={() => { heightLow = 20; heightHigh = 80 }}><RangeSlider bind:low={heightLow} bind:high={heightHigh} min={0} max={100} step={1} color="aqua" /></Prop>
+  <Prop name="Scale" tip="Perlin noise frequency — higher is bumpier" bind:value={noiseScale} default={0.012}><NumberInput bind:value={noiseScale} label="f" color="orange" min={0.001} max={0.05} precision={3} sensitivity={0.0002} /></Prop>
+  <Prop name="Speed" tip="Horizontal scroll rate" bind:value={scrollSpeed} default={0.8}><NumberInput bind:value={scrollSpeed} label="f" color="orange" min={0} max={5} precision={1} sensitivity={0.05} /></Prop>
+  <Prop name="Layers" tip="Parallax depth layers" bind:value={terrainLayers} default={3}><NumberInput bind:value={terrainLayers} label="i" color="blue" min={1} max={6} precision={0} sensitivity={0.3} /></Prop>
+  <Prop name="Gradient" tip="Color ramp mapped to elevation" value={terrainGradient} default={DEFAULT_GRADIENT} reset={() => terrainGradient = structuredClone(DEFAULT_GRADIENT)}><GradientEditor bind:stops={terrainGradient} /></Prop>
+  <Prop name="Animate" tip="Auto-scroll the terrain" bind:value={terrainAnimate} default={true}><input type="checkbox" bind:checked={terrainAnimate} /></Prop>
 </P5>
 
 ---
@@ -627,16 +627,16 @@ Test page for visualization tools and interactive components.
 # Easing Visualizer
 
 <P5 sketch={easingSketch}>
-  <Prop name="Curve" value={easingPoints} default={DEFAULT_EASING} reset={() => easingPoints = structuredClone(DEFAULT_EASING)}>
+  <Prop name="Curve" tip="Easing function shape" value={easingPoints} default={DEFAULT_EASING} reset={() => easingPoints = structuredClone(DEFAULT_EASING)}>
     <CurveEditor bind:points={easingPoints} color="aqua" />
   </Prop>
-  <Prop name="Duration" bind:value={easingDuration} default={120}>
+  <Prop name="Duration" tip="Frames per animation cycle" bind:value={easingDuration} default={120}>
     <NumberInput bind:value={easingDuration} label="i" color="blue" min={30} max={600} precision={0} sensitivity={2} />
   </Prop>
-  <Prop name="Objects" bind:value={easingCount} default={5}>
+  <Prop name="Objects" tip="Number of animated dots" bind:value={easingCount} default={5}>
     <NumberInput bind:value={easingCount} label="i" color="blue" min={1} max={20} precision={0} sensitivity={0.5} />
   </Prop>
-  <Prop name="Trail" bind:value={easingTrail} default={true}>
+  <Prop name="Trail" tip="Leave fading motion trail" bind:value={easingTrail} default={true}>
     <input type="checkbox" bind:checked={easingTrail} />
   </Prop>
 </P5>
@@ -658,14 +658,14 @@ Test page for visualization tools and interactive components.
     <button class:active={btab === 'style'} on:click={() => btab = 'style'}>Style</button>
   </div>
   {#if btab === 'rules'}
-    <Prop name="Separation" bind:value={boidSep} default={1.5}><NumberInput bind:value={boidSep} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
-    <Prop name="Alignment" bind:value={boidAli} default={1.0}><NumberInput bind:value={boidAli} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
-    <Prop name="Cohesion" bind:value={boidCoh} default={1.0}><NumberInput bind:value={boidCoh} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
-    <Prop name="Perception" value={[percNear, percFar]} default={[25, 75]} reset={() => { percNear = 25; percFar = 75 }}><RangeSlider bind:low={percNear} bind:high={percFar} min={5} max={150} step={1} color="aqua" /></Prop>
+    <Prop name="Separation" tip="Steer away from nearby boids" bind:value={boidSep} default={1.5}><NumberInput bind:value={boidSep} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
+    <Prop name="Alignment" tip="Match heading of neighbors" bind:value={boidAli} default={1.0}><NumberInput bind:value={boidAli} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
+    <Prop name="Cohesion" tip="Steer toward flock center" bind:value={boidCoh} default={1.0}><NumberInput bind:value={boidCoh} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
+    <Prop name="Perception" tip="Near radius for separation, far for alignment and cohesion" value={[percNear, percFar]} default={[25, 75]} reset={() => { percNear = 25; percFar = 75 }}><RangeSlider bind:low={percNear} bind:high={percFar} min={5} max={100} step={1} color="aqua" /></Prop>
   {/if}
   {#if btab === 'forces'}
-    <Prop name="Wind" value={[windAngle, windStrength]} default={[0, 0]} reset={() => { windAngle = 0; windStrength = 0 }}><div class="p5-inline" style="align-items:center;padding:0;border:none"><AnglePicker bind:angle={windAngle} style="width:3.5em" /><NumberInput bind:value={windStrength} label="f" color="orange" min={0} max={0.5} precision={3} sensitivity={0.005} /></div></Prop>
-    <Prop name="Goal" value={[goalX, goalY, goalMode, goalStrength]} default={[0.5, 0.5, 'off', 0.5]} reset={() => { goalX = 0.5; goalY = 0.5; goalMode = 'off'; goalStrength = 0.5 }}>
+    <Prop name="Wind" tip="Global directional force on all boids" value={[windAngle, windStrength]} default={[0, 0]} reset={() => { windAngle = 0; windStrength = 0 }}><div class="p5-inline" style="align-items:center;padding:0;border:none"><AnglePicker bind:angle={windAngle} style="width:3.5em" /><NumberInput bind:value={windStrength} label="f" color="orange" min={0} max={0.5} precision={3} sensitivity={0.005} /></div></Prop>
+    <Prop name="Goal" tip="Attract or repel boids toward a point" value={[goalX, goalY, goalMode, goalStrength]} default={[0.5, 0.5, 'off', 0.5]} reset={() => { goalX = 0.5; goalY = 0.5; goalMode = 'off'; goalStrength = 0.5 }}>
       <div class="p5-inline" style="align-items:stretch;padding:0;border:none">
         <PositionPad bind:x={goalX} bind:y={goalY} />
         <div style="display:flex;flex-direction:column;gap:4px;justify-content:center">
@@ -674,17 +674,17 @@ Test page for visualization tools and interactive components.
             <label><input type="radio" bind:group={goalMode} value="attract" /> Attract</label>
             <label><input type="radio" bind:group={goalMode} value="repel" /> Repel</label>
           </div>
-          <NumberInput bind:value={goalStrength} label="f" color="orange" min={0} max={2} precision={2} sensitivity={0.02} />
+          <NumberInput bind:value={goalStrength} label="f" color="orange" min={0} max={1} precision={2} sensitivity={0.02} />
         </div>
       </div>
     </Prop>
   {/if}
   {#if btab === 'style'}
-    <Prop name="Count" bind:value={boidsCount} default={120}><NumberInput bind:value={boidsCount} label="i" color="blue" min={1} max={300} precision={0} sensitivity={1} /></Prop>
-    <Prop name="Size" bind:value={boidSize} default={5}><NumberInput bind:value={boidSize} label="i" color="blue" min={2} max={12} precision={0} sensitivity={0.3} /></Prop>
-    <Prop name="Max Speed" bind:value={boidMaxSpeed} default={3}><NumberInput bind:value={boidMaxSpeed} label="f" color="orange" min={0.5} max={10} precision={1} sensitivity={0.1} /></Prop>
-    <Prop name="Trail" bind:value={boidTrail} default={true}><input type="checkbox" bind:checked={boidTrail} /></Prop>
-    <Prop name="Colors" value={boidGradient} default={DEFAULT_BOIDS_GRADIENT} reset={() => boidGradient = structuredClone(DEFAULT_BOIDS_GRADIENT)}><GradientEditor bind:stops={boidGradient} /></Prop>
-    <Prop name="Speed Curve" value={boidSpeedCurve} default={DEFAULT_SPEED_CURVE} reset={() => boidSpeedCurve = structuredClone(DEFAULT_SPEED_CURVE)}><CurveEditor bind:points={boidSpeedCurve} color="aqua" /></Prop>
+    <Prop name="Count" tip="Total boids in the flock" bind:value={boidsCount} default={120}><NumberInput bind:value={boidsCount} label="i" color="blue" min={1} max={200} precision={0} sensitivity={1} /></Prop>
+    <Prop name="Size" tip="Triangle size for each boid" bind:value={boidSize} default={5}><NumberInput bind:value={boidSize} label="i" color="blue" min={2} max={12} precision={0} sensitivity={0.3} /></Prop>
+    <Prop name="Max Speed" tip="Velocity cap for each boid" bind:value={boidMaxSpeed} default={3}><NumberInput bind:value={boidMaxSpeed} label="f" color="orange" min={1} max={10} precision={1} sensitivity={0.1} /></Prop>
+    <Prop name="Trail" tip="Leave fading motion trail" bind:value={boidTrail} default={true}><input type="checkbox" bind:checked={boidTrail} /></Prop>
+    <Prop name="Colors" tip="Color ramp mapped to speed" value={boidGradient} default={DEFAULT_BOIDS_GRADIENT} reset={() => boidGradient = structuredClone(DEFAULT_BOIDS_GRADIENT)}><GradientEditor bind:stops={boidGradient} /></Prop>
+    <Prop name="Speed Curve" tip="Remaps speed to gradient position" value={boidSpeedCurve} default={DEFAULT_SPEED_CURVE} reset={() => boidSpeedCurve = structuredClone(DEFAULT_SPEED_CURVE)}><CurveEditor bind:points={boidSpeedCurve} color="aqua" /></Prop>
   {/if}
 </P5>
