@@ -344,16 +344,20 @@ function terrainSketch(p) {
 
 				if (terrainStyle === 'outline') {
 					buf.noFill();
-					let [r, g, b] = sampleGradient(terrainGradient, 0.5);
-					buf.stroke(r, g, b, layerAlpha);
 					buf.strokeWeight(1.5);
-					buf.beginShape();
+					let prevX, prevY;
 					for (let x = 0; x <= w; x += 2) {
 						let n = p.noise(x * layerScale + offset * layerSpeed * 0.01, layer * 100);
 						let y = h - p.map(n, 0, 1, layerHMin, layerHMax);
-						buf.vertex(x, y);
+						if (prevX !== undefined) {
+							let t = 1 - (((prevY + y) / 2) / h);
+							let [r, g, b] = sampleGradient(terrainGradient, t);
+							buf.stroke(r, g, b, layerAlpha);
+							buf.line(prevX, prevY, x, y);
+						}
+						prevX = x;
+						prevY = y;
 					}
-					buf.endShape();
 				} else if (terrainStyle === 'dots') {
 					buf.noStroke();
 					for (let x = 0; x <= w; x += 6) {
