@@ -382,6 +382,160 @@ function terrainSketch(p) {
 		p.image(buf, 0, 0);
 	};
 }
+
+// -- Boids flocking --
+const DEFAULT_BOIDS_GRADIENT = [
+	{ pos: 0, color: '#458588' },
+	{ pos: 0.5, color: '#b8bb26' },
+	{ pos: 1, color: '#fb4934' }
+];
+const DEFAULT_SPEED_CURVE = [
+	{ x: 0, y: 0, interpolation: 'cubic', tangentIn: 0, tangentOut: 1, tangentMode: 'mirrored' },
+	{ x: 1, y: 1, interpolation: 'cubic', tangentIn: 1, tangentOut: 0, tangentMode: 'mirrored' }
+];
+
+let btab = 'rules';
+let {
+	boidsCount = 120,
+	boidSep = 1.5, boidAli = 1.0, boidCoh = 1.0,
+	percNear = 25, percFar = 75,
+	boidMaxSpeed = 3,
+	windAngle = 0, windStrength = 0,
+	goalX = 0.5, goalY = 0.5,
+	goalMode = 'off',
+	goalStrength = 0.5,
+	boidSize = 5, boidTrail = true,
+	boidGradient = structuredClone(DEFAULT_BOIDS_GRADIENT),
+	boidSpeedCurve = structuredClone(DEFAULT_SPEED_CURVE),
+} = loadProps('boids');
+let boidReadout = 0;
+$: saveProps('boids', {
+	boidsCount, boidSep, boidAli, boidCoh,
+	percNear, percFar, boidMaxSpeed,
+	windAngle, windStrength,
+	goalX, goalY, goalMode, goalStrength,
+	boidSize, boidTrail,
+	boidGradient, boidSpeedCurve,
+});
+
+function boidsSketch(p) {
+	let flock = [];
+
+	function makeBoid() {
+		return {
+			x: p.random(p.width),
+			y: p.random(p.height),
+			vx: p.random(-1, 1),
+			vy: p.random(-1, 1),
+		};
+	}
+
+	p.setup = () => {
+		p.createCanvas(600, 300);
+		for (let i = 0; i < boidsCount; i++) flock.push(makeBoid());
+	};
+
+	p.draw = () => {
+		p.background(30, boidTrail ? 25 : 255);
+
+		while (flock.length < boidsCount) flock.push(makeBoid());
+		while (flock.length > boidsCount) flock.pop();
+
+		let w = p.width, h = p.height;
+
+		for (let boid of flock) {
+			let sepX = 0, sepY = 0;
+			let aliX = 0, aliY = 0;
+			let cohX = 0, cohY = 0;
+			let sepCount = 0, aliCount = 0;
+
+			for (let other of flock) {
+				if (other === boid) continue;
+				let dx = other.x - boid.x;
+				let dy = other.y - boid.y;
+				if (dx > w / 2) dx -= w;
+				if (dx < -w / 2) dx += w;
+				if (dy > h / 2) dy -= h;
+				if (dy < -h / 2) dy += h;
+				let dist = Math.sqrt(dx * dx + dy * dy);
+
+				if (dist < percNear && dist > 0) {
+					sepX -= dx / dist;
+					sepY -= dy / dist;
+					sepCount++;
+				}
+				if (dist < percFar) {
+					aliX += other.vx;
+					aliY += other.vy;
+					cohX += dx;
+					cohY += dy;
+					aliCount++;
+				}
+			}
+
+			let ax = 0, ay = 0;
+
+			if (sepCount > 0) {
+				ax += (sepX / sepCount) * boidSep;
+				ay += (sepY / sepCount) * boidSep;
+			}
+			if (aliCount > 0) {
+				ax += (aliX / aliCount - boid.vx) * boidAli;
+				ay += (aliY / aliCount - boid.vy) * boidAli;
+				ax += (cohX / aliCount) * boidCoh * 0.01;
+				ay += (cohY / aliCount) * boidCoh * 0.01;
+			}
+
+			ax += Math.cos(windAngle * Math.PI / 180) * windStrength;
+			ay += Math.sin(windAngle * Math.PI / 180) * windStrength;
+
+			if (goalMode !== 'off') {
+				let gx = goalX * w - boid.x;
+				let gy = goalY * h - boid.y;
+				if (gx > w / 2) gx -= w;
+				if (gx < -w / 2) gx += w;
+				if (gy > h / 2) gy -= h;
+				if (gy < -h / 2) gy += h;
+				let gd = Math.sqrt(gx * gx + gy * gy) || 1;
+				let sign = goalMode === 'attract' ? 1 : -1;
+				ax += (gx / gd) * goalStrength * sign;
+				ay += (gy / gd) * goalStrength * sign;
+			}
+
+			boid.vx += ax;
+			boid.vy += ay;
+
+			let spd = Math.sqrt(boid.vx * boid.vx + boid.vy * boid.vy);
+			if (spd > boidMaxSpeed) {
+				boid.vx = (boid.vx / spd) * boidMaxSpeed;
+				boid.vy = (boid.vy / spd) * boidMaxSpeed;
+				spd = boidMaxSpeed;
+			}
+
+			boid.x += boid.vx;
+			boid.y += boid.vy;
+
+			boid.x = ((boid.x % w) + w) % w;
+			boid.y = ((boid.y % h) + h) % h;
+
+			let t = spd / boidMaxSpeed;
+			let ct = sampleCurve(boidSpeedCurve, t);
+			let [r, g, b] = sampleGradient(boidGradient, ct);
+			p.fill(r, g, b);
+			p.noStroke();
+
+			let angle = Math.atan2(boid.vy, boid.vx);
+			let s = boidSize;
+			p.push();
+			p.translate(boid.x, boid.y);
+			p.rotate(angle);
+			p.triangle(s, 0, -s * 0.6, -s * 0.4, -s * 0.6, s * 0.4);
+			p.pop();
+		}
+
+		boidReadout = flock.length;
+	};
+}
 </script>
 
 Test page for visualization tools and interactive components.
@@ -485,4 +639,52 @@ Test page for visualization tools and interactive components.
   <Prop name="Trail" bind:value={easingTrail} default={true}>
     <input type="checkbox" bind:checked={easingTrail} />
   </Prop>
+</P5>
+
+---
+
+# Boids Flocking
+
+<P5 sketch={boidsSketch}>
+  <div slot="overlay">
+    <div class="p5-readout">
+      <span class="p5-readout-label">Boids</span>
+      <span class="p5-readout-value">{boidReadout}</span>
+    </div>
+  </div>
+  <div class="p5-tabs">
+    <button class:active={btab === 'rules'} on:click={() => btab = 'rules'}>Rules</button>
+    <button class:active={btab === 'forces'} on:click={() => btab = 'forces'}>Forces</button>
+    <button class:active={btab === 'style'} on:click={() => btab = 'style'}>Style</button>
+  </div>
+  {#if btab === 'rules'}
+    <Prop name="Separation" bind:value={boidSep} default={1.5}><NumberInput bind:value={boidSep} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
+    <Prop name="Alignment" bind:value={boidAli} default={1.0}><NumberInput bind:value={boidAli} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
+    <Prop name="Cohesion" bind:value={boidCoh} default={1.0}><NumberInput bind:value={boidCoh} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
+    <Prop name="Perception" value={[percNear, percFar]} default={[25, 75]} reset={() => { percNear = 25; percFar = 75 }}><RangeSlider bind:low={percNear} bind:high={percFar} min={5} max={150} step={1} color="aqua" /></Prop>
+  {/if}
+  {#if btab === 'forces'}
+    <Prop name="Wind" value={[windAngle, windStrength]} default={[0, 0]} reset={() => { windAngle = 0; windStrength = 0 }}><div class="p5-inline" style="align-items:center;padding:0;border:none"><AnglePicker bind:angle={windAngle} style="width:3.5em" /><NumberInput bind:value={windStrength} label="f" color="orange" min={0} max={0.5} precision={3} sensitivity={0.005} /></div></Prop>
+    <Prop name="Goal" value={[goalX, goalY, goalMode, goalStrength]} default={[0.5, 0.5, 'off', 0.5]} reset={() => { goalX = 0.5; goalY = 0.5; goalMode = 'off'; goalStrength = 0.5 }}>
+      <div class="p5-inline" style="align-items:stretch;padding:0;border:none">
+        <PositionPad bind:x={goalX} bind:y={goalY} />
+        <div style="display:flex;flex-direction:column;gap:4px;justify-content:center">
+          <div class="p5-radio">
+            <label><input type="radio" bind:group={goalMode} value="off" /> Off</label>
+            <label><input type="radio" bind:group={goalMode} value="attract" /> Attract</label>
+            <label><input type="radio" bind:group={goalMode} value="repel" /> Repel</label>
+          </div>
+          <NumberInput bind:value={goalStrength} label="f" color="orange" min={0} max={2} precision={2} sensitivity={0.02} />
+        </div>
+      </div>
+    </Prop>
+  {/if}
+  {#if btab === 'style'}
+    <Prop name="Count" bind:value={boidsCount} default={120}><NumberInput bind:value={boidsCount} label="i" color="blue" min={1} max={300} precision={0} sensitivity={1} /></Prop>
+    <Prop name="Size" bind:value={boidSize} default={5}><NumberInput bind:value={boidSize} label="i" color="blue" min={2} max={12} precision={0} sensitivity={0.3} /></Prop>
+    <Prop name="Max Speed" bind:value={boidMaxSpeed} default={3}><NumberInput bind:value={boidMaxSpeed} label="f" color="orange" min={0.5} max={10} precision={1} sensitivity={0.1} /></Prop>
+    <Prop name="Trail" bind:value={boidTrail} default={true}><input type="checkbox" bind:checked={boidTrail} /></Prop>
+    <Prop name="Colors" value={boidGradient} default={DEFAULT_BOIDS_GRADIENT} reset={() => boidGradient = structuredClone(DEFAULT_BOIDS_GRADIENT)}><GradientEditor bind:stops={boidGradient} /></Prop>
+    <Prop name="Speed Curve" value={boidSpeedCurve} default={DEFAULT_SPEED_CURVE} reset={() => boidSpeedCurve = structuredClone(DEFAULT_SPEED_CURVE)}><CurveEditor bind:points={boidSpeedCurve} color="aqua" /></Prop>
+  {/if}
 </P5>
