@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Reels — Character Dialogue</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+    :root {
+      --bg-hard: #1d2021;
+      --bg: #282828;
+      --bg1: #3c3836;
+      --bg2: #504945;
+      --bg3: #665c54;
+      --bg4: #7c6f64;
+      --fg: #ebdbb2;
+      --fg1: #d5c4a1;
+      --fg2: #bdae93;
+      --fg3: #a89984;
+      --fg4: #928374;
+      --red: #fb4934;
+      --green: #b8bb26;
+      --yellow: #fabd2f;
+      --blue: #83a598;
+      --purple: #d3869b;
+      --aqua: #8ec07c;
+      --orange: #fe8019;
+      --yellow-dim: #d79921;
+      --orange-dim: #d65d0e;
+      --red-dim: #cc241d;
+      --blue-dim: #458588;
+      --purple-dim: #b16286;
+      --aqua-dim: #689d6a;
+      --green-dim: #98971a;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-hard);
+      color: var(--fg);
+      font-family: 'Crimson Text', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.5;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* --- Page Header --- */
+    .page-header {
+      max-width: 960px;
+      margin: 0 auto 2rem;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      font-family: 'Cinzel', serif;
+      font-weight: 900;
+      font-size: 2.2rem;
+      color: var(--yellow);
+      letter-spacing: 0.08em;
+    }
+
+    .page-header p {
+      color: var(--fg3);
+      font-size: 1rem;
+      margin-top: 0.25rem;
+    }
+
+    /* --- Snippet List --- */
+    .snippets {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* --- Snippet Card --- */
+    .snippet {
+      background: var(--bg);
+      border: 2px solid var(--bg2);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .snippet:hover,
+    .snippet.active {
+      border-color: var(--bg3);
+    }
+
+    .snippet-top {
+      display: flex;
+      align-items: stretch;
+      min-height: 180px;
+    }
+
+    /* Portrait */
+    .portrait-frame {
+      width: 180px;
+      min-width: 180px;
+      background: var(--bg1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 2px solid var(--bg2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .portrait-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .portrait-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fg4);
+      font-size: 3rem;
+      user-select: none;
+      background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+    }
+
+    /* Bio area */
+    .snippet-bio {
+      flex: 1;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .snippet-name {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 1.35rem;
+      color: var(--orange);
+      margin-bottom: 0.15rem;
+    }
+
+    .snippet-archetype {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--fg4);
+      margin-bottom: 0.6rem;
+    }
+
+    .snippet-desc {
+      color: var(--fg2);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    /* --- Dialogue Box --- */
+    .dialogue-area {
+      border-top: 2px solid var(--bg2);
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      padding: 1.25rem 1.5rem;
+      position: relative;
+    }
+
+    .dialogue-area::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 1.5rem;
+      right: 1.5rem;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--yellow-dim), transparent);
+    }
+
+    /* Mood selector */
+    .mood-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .mood-btn {
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.7rem;
+      border-radius: 3px;
+      border: 1px solid var(--bg3);
+      background: transparent;
+      color: var(--fg3);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mood-btn:hover {
+      border-color: var(--fg4);
+      color: var(--fg1);
+    }
+
+    .mood-btn.selected {
+      border-color: var(--yellow-dim);
+      color: var(--yellow);
+      background: rgba(250, 189, 47, 0.08);
+    }
+
+    /* Controls row */
+    .dialogue-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .btn-play {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2px solid var(--yellow-dim);
+      background: transparent;
+      color: var(--yellow);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .btn-play:hover {
+      background: rgba(250, 189, 47, 0.1);
+      border-color: var(--yellow);
+    }
+
+    .btn-play.playing {
+      border-color: var(--orange);
+      color: var(--orange);
+    }
+
+    .btn-play svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .progress-wrap {
+      flex: 1;
+      height: 6px;
+      background: var(--bg2);
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--yellow-dim);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .time-display {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      color: var(--fg4);
+      letter-spacing: 0.05em;
+      min-width: 70px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Transcript text */
+
+    .dialogue-text {
+      color: var(--fg);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      min-height: 3.2em;
+    }
+
+    .dialogue-text .cursor-wrap {
+      display: inline;
+      position: relative;
+      width: 0;
+      height: 0;
+    }
+
+    .dialogue-text .cursor {
+      position: absolute;
+      left: 0;
+      top: 0.15em;
+      width: 2px;
+      height: 1.1em;
+      background: var(--yellow);
+      animation: blink 0.8s step-end infinite;
+      pointer-events: none;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .dialogue-text .unspoken {
+      color: var(--bg4);
+    }
+
+    .dialogue-wrap {
+      position: relative;
+    }
+
+    .dialogue-hit {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      color: transparent;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      user-select: none;
+      cursor: default;
+    }
+
+    .dialogue-hit .word {
+      cursor: pointer;
+      border-radius: 2px;
+    }
+
+    .dialogue-hit .word:hover {
+      background: rgba(250, 189, 47, 0.1);
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 600px) {
+      .snippet-top {
+        flex-direction: column;
+      }
+
+      .portrait-frame {
+        width: 100%;
+        min-width: unset;
+        height: 200px;
+        border-right: none;
+        border-bottom: 2px solid var(--bg2);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="page-header">
+    <h1>Voice Reels</h1>
+    <p>Select a character, choose a mood, and listen.</p>
+  </div>
+
+  <div class="snippets" id="snippets"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const CHARACTERS = [
+        {
+          name: 'Aldric Ironvow',
+          archetype: 'Sworn Knight · Serious',
+          portrait: 'portraits/aldric.jpg',
+          icon: '⚔',
+          bio: 'Last of the Ironvow paladins, bound by an oath older than the kingdom he serves. He speaks like a man who has buried friends and expects to bury more. Every word lands like a gauntlet on stone.',
+          moods: [
+            {
+              label: 'Oath-Sworn',
+              audio: '',
+              transcript: 'I swore before the Flame Eternal that I would hold this keep until the last stone crumbled or the last breath left my lungs.{pause} That oath does not bend for politics. It does not bend for kings.{beat} And it will not bend for you.{long} Turn your army around, or I will give it a reason to.',
+            },
+            {
+              label: 'Battle Command',
+              audio: '',
+              transcript: 'Shields forward! Close the gap, nothing gets through this line. You see that banner? That is our standard, and it does not touch the ground. Not today. Not while any one of us still draws breath. Hold formation. Hold your nerve. And when they come, show them what it costs.',
+            },
+            {
+              label: 'Mourning',
+              audio: '',
+              pace: 1.8,
+              transcript: 'He was the best of us.{beat} Not the strongest. Not the fastest.{pause} The best.{...}{pause} Because when the rest of us were calculating odds and measuring our chances, Edric simply walked forward.{beat} No hesitation.{beat} No fear.{....} And I stood there{..} his commander, his brother{....} and I let him.',
+            },
+            {
+              label: 'Resolute',
+              audio: '',
+              pace: 1.3,
+              transcript: 'They will call this a hopeless stand.{beat} They will say we should have retreated while the roads were still open.{pause} Perhaps they are right.{long} But there are three hundred souls behind these walls who cannot march, cannot ride, cannot fight.{pause} And I did not take this oath to protect only the convenient.',
+            },
+          ],
+        },
+        {
+          name: 'Lord Malachar Grave',
+          archetype: 'Lich King · Sinister',
+          portrait: 'portraits/malachar.jpg',
+          icon: '☠',
+          bio: 'Once a court sorcerer, now something far older and far less human. He speaks from the shadows with the patience of a man who has already won and is simply waiting for you to realize it.',
+          moods: [
+            {
+              label: 'Quiet Menace',
+              audio: '',
+              pace: 1.4,
+              transcript: 'You brought torches into my hall.{beat} How thoughtful.{pause} I do so enjoy watching the light leave things.{...}{long} Tell me, did your king send you here to negotiate?{beat} Or did he simply run out of men he was willing to lose?{pause} Either way, you have my attention.{long} For now.',
+            },
+            {
+              label: 'Dark Temptation',
+              audio: '',
+              pace: 1.3,
+              transcript: 'I could give you what you want.{beat} The throne, the army, the woman who turned her back on you.{beat} All of it.{pause} And it would cost you so little{..} just a name.{pause} One name, whispered to me in the dark.{beat} Someone you already despise.{....}{long} Think of it as{...} pruning.',
+            },
+            {
+              label: 'Unleashed Wrath',
+              audio: '',
+              transcript: 'You dare.{long} You crawl into my sanctum, you shatter my wards, and you think your little blade of blessed silver will be enough?{pause} I have watched civilizations rot. I have eaten the prayers of holy men.{beat} And you{....}{pause} you are not even a footnote.{beat} You are the smudge where the footnote used to be.',
+            },
+            {
+              label: 'False Kindness',
+              audio: '',
+              pace: 1.5,
+              transcript: 'Shh.{long} Rest now.{...}{pause} You have fought so bravely, truly, I mean that.{beat} Most would have broken long before this.{pause} But it is over, child.{beat} The pain, the fear, the desperate hope that someone might come for you.{....}{long} Let it go.{pause} I will take such good care of what remains.',
+            },
+          ],
+        },
+        {
+          name: 'Fennick Thistledown',
+          archetype: 'Fey Lord · Trickster',
+          portrait: 'portraits/fennick.jpg',
+          icon: '♢',
+          bio: 'An ageless creature of the old wood who speaks in riddles, half-truths, and technically accurate lies. He finds mortals endlessly entertaining and treats the world like a game only he knows the rules to.',
+          moods: [
+            {
+              label: 'Riddling',
+              audio: '',
+              transcript: 'I will answer your question, I always do. But first, a question of my own. If a man walks through my forest with a sword, is he brave or merely armed? And if he walks through without one, is he foolish or does he know something the sword doesn\'t? Choose carefully. The forest is listening.',
+            },
+            {
+              label: 'Silver-Tongued',
+              audio: '',
+              transcript: 'A deal! How wonderful. I do love deals. Here are the terms: I give you exactly what you asked for, not a hair more, not a whisper less. And in return, you owe me a favor. Nothing sinister, I assure you. Just a small, harmless, perfectly reasonable favor. To be named later. At a time of my choosing. Agreed?',
+            },
+            {
+              label: 'Gleeful Chaos',
+              audio: '',
+              transcript: 'Oh, this is marvelous. You told the baron that the duke said what? And the duke thinks the baron knows about the{...} oh, this is too perfect. I barely had to do anything this time. You mortals are magnificent. You lie to each other for free. I would have charged at least a firstborn.',
+            },
+            {
+              label: 'Revealed Danger',
+              audio: '',
+              pace: 1.3,
+              transcript: 'You\'re still smiling.{beat} Good.{beat} I like the brave ones, they last longer.{pause} But let me be clear about something, little knight.{pause} I am not the whimsical forest spirit from your storybooks.{beat} I am the thing that wrote the storybooks.{beat} And I wrote the endings too.{....}{long} Would you like to hear yours?',
+            },
+          ],
+        },
+        {
+          name: 'Grumble Potsworth',
+          archetype: 'Innkeeper · Coward · Silly',
+          portrait: 'portraits/grumble.jpg',
+          icon: '☕',
+          bio: 'Proprietor of the Leaky Sovereign, a man whose only quest is to survive the week without his tavern burning down again. Somehow always at the center of world-ending events he wants absolutely no part of.',
+          moods: [
+            {
+              label: 'Panicked',
+              audio: '',
+              transcript: 'There is a DRAGON.{beat} In my CELLAR.{beat} Eating my CHEESE.{pause} Do you understand? That was the good cheese, the aged stuff from the northern monks! I\'ve been waiting six months for that wheel to ripen and there is a winged lizard down there just{..} just HAVING IT.{beat} Someone DO something!',
+            },
+            {
+              label: 'Boastful',
+              audio: '',
+              transcript: 'Oh, you think I\'ve always been an innkeeper? Ha! I\'ll have you know I was once a squire to Sir Reginald the Adequate. Fought in the Battle of Bogmere. Well{...} near the Battle of Bogmere. I was in a supply cart behind the hill. But I HEARD the battle. Very intense. I handed out blankets afterward. Heroically.',
+            },
+            {
+              label: 'Exasperated',
+              audio: '',
+              transcript: 'No. No no no. You are NOT stabling a griffin in my barn. I don\'t care that it\'s "mostly tame." Last time someone said that, I lost an entire wall and three chickens. The chickens I can replace. The wall cost me forty silver. Do you have forty silver? No? Then the griffin sleeps OUTSIDE.',
+            },
+            {
+              label: 'Reluctant Bravery',
+              audio: '',
+              transcript: 'Fine.{beat} FINE.{beat} Give me the{..} no, not that sword, it\'s taller than I am, give me the pan. The iron one.{pause} If that thing comes through the door, I\'m going to hit it, and then I\'m going to run, and I want it noted for the record that this was NOT my idea and I am doing this UNDER PROTEST.',
+            },
+          ],
+        },
+        {
+          name: 'Brother Orenthal',
+          archetype: 'Wandering Monk · Narrator',
+          portrait: 'portraits/orenthal.jpg',
+          icon: '✦',
+          bio: 'A traveling cleric who has seen too much of the world to be pious and too much of the divine to be cynical. He tells tales by firelight with a voice like aged oak and old smoke.',
+          moods: [
+            {
+              label: 'Narration',
+              audio: '',
+              pace: 1.3,
+              transcript: 'The kingdom of Ashenmoor did not fall in a single day.{pause} It fell in a thousand quiet surrenders.{beat} A border left unguarded, a letter left unanswered, a warning left unheeded.{....}{long} By the time the armies came, there was nothing left to conquer.{beat} Only something to claim.',
+            },
+            {
+              label: 'Weary Wisdom',
+              audio: '',
+              pace: 1.4,
+              transcript: 'You want to know if the gods are real?{pause} I\'ve walked the length of this continent, boy. I\'ve prayed in every temple and bled on every road.{beat} And here is what I know:{pause} something listens.{....}{long} Whether it cares, that is a different question entirely.{beat} And not one I\'d ask on an empty stomach.',
+            },
+            {
+              label: 'Dry Humor',
+              audio: '',
+              transcript: 'I once blessed a horse that turned out to be a polymorphed duke. He was not amused. I told him any duke who gets turned into a horse probably deserved the blessing more than most. He did not invite me to the coronation. I consider this a mutual victory.',
+            },
+            {
+              label: 'Solemn Prayer',
+              audio: '',
+              pace: 1.6,
+              transcript: 'Flame above and stone below, hear this unworthy voice.{pause} I do not ask for victory. I do not ask for mercy.{beat} I ask only that when these men fall, and they will fall,{beat} they are met by something kinder than what I have seen in this world.{....}{long} Grant them that.{pause} Please.{....}{long} Grant them that.',
+            },
+          ],
+        },
+      ];
+
+      const container = document.getElementById('snippets');
+
+      CHARACTERS.forEach((char, ci) => {
+        const el = document.createElement('div');
+        el.className = 'snippet';
+        el.dataset.charIndex = ci;
+
+        const moodButtons = char.moods.map((m, mi) =>
+          `<button class="mood-btn${mi === 0 ? ' selected' : ''}" data-mood="${mi}">${m.label}</button>`
+        ).join('');
+
+        el.innerHTML = `
+      <div class="snippet-top">
+        <div class="portrait-frame">
+          <img src="${char.portrait}" alt="${char.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="portrait-placeholder" style="display:none;">${char.icon}</div>
+        </div>
+        <div class="snippet-bio">
+          <div class="snippet-name">${char.name}</div>
+          <div class="snippet-archetype">${char.archetype}</div>
+          <div class="snippet-desc">${char.bio}</div>
+        </div>
+      </div>
+      <div class="dialogue-area">
+        <div class="mood-selector">${moodButtons}</div>
+        <div class="dialogue-controls">
+          <button class="btn-play" aria-label="Play">
+            <svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21" /></svg>
+          </button>
+          <div class="progress-wrap">
+            <div class="progress-bar"></div>
+          </div>
+          <div class="time-display">0:00 / 0:00</div>
+        </div>
+        <div class="dialogue-wrap">
+          <div class="dialogue-hit"></div>
+          <div class="dialogue-text"></div>
+        </div>
+      </div>
+    `;
+
+        container.appendChild(el);
+      });
+
+      const CHAR_DELAY = 38;
+      const PAUSE_CHARS = {
+        '.': 280, ',': 120, ';': 150, ':': 150,
+        '!': 260, '?': 260,
+      };
+
+      const PAUSE_NAMES = {beat: 300, pause: 600, long: 1000};
+
+      const DOTS_RE = /^\.{2,}$/;
+
+      function parseTranscript(raw) {
+        const steps = [];
+        let displayText = '';
+        let i = 0;
+
+        while (i < raw.length) {
+          if (raw[i] === '{') {
+            const end = raw.indexOf('}', i);
+            if (end !== -1) {
+              const token = raw.slice(i + 1, end).trim();
+              const tokenLower = token.toLowerCase();
+
+              if (DOTS_RE.test(tokenLower)) {
+                const count = tokenLower.length;
+                for (let d = 0; d < count; d++) {
+                  const idx = displayText.length;
+                  displayText += '.';
+                  steps.push({type: 'char', ch: '.', index: idx});
+                }
+              } else {
+                const ms = PAUSE_NAMES[tokenLower] || parseInt(tokenLower, 10) || 0;
+                if (ms > 0) {
+                  steps.push({type: 'pause', ms});
+                }
+              }
+              i = end + 1;
+              continue;
+            }
+          }
+          const idx = displayText.length;
+          displayText += raw[i];
+          steps.push({type: 'char', ch: raw[i], index: idx});
+          i++;
+        }
+        return {displayText, steps};
+      }
+
+      const parsedCache = new Map();
+      function getParsed(charIndex, moodIndex) {
+        const key = charIndex + ':' + moodIndex;
+        if (!parsedCache.has(key)) {
+          parsedCache.set(key, parseTranscript(CHARACTERS[charIndex].moods[moodIndex].transcript));
+        }
+        return parsedCache.get(key);
+      }
+
+      function getMood(el) {
+        const s = state.get(el);
+        return CHARACTERS[s.charIndex].moods[s.moodIndex];
+      }
+
+      function getPace(el) {
+        return getMood(el).pace || 1.0;
+      }
+
+      function getDisplayText(el) {
+        const s = state.get(el);
+        return getParsed(s.charIndex, s.moodIndex).displayText;
+      }
+
+      function getSteps(el) {
+        const s = state.get(el);
+        return getParsed(s.charIndex, s.moodIndex).steps;
+      }
+
+      const durationCache = new Map();
+      function calcDuration(charIndex, moodIndex) {
+        const key = charIndex + ':' + moodIndex;
+        if (durationCache.has(key)) return durationCache.get(key);
+        const {steps} = getParsed(charIndex, moodIndex);
+        const pace = CHARACTERS[charIndex].moods[moodIndex].pace || 1.0;
+        let total = 0;
+        for (const step of steps) {
+          if (step.type === 'char') {
+            total += (CHAR_DELAY + (PAUSE_CHARS[step.ch] || 0)) * pace;
+          } else if (step.type === 'pause') {
+            total += step.ms * pace;
+          }
+        }
+        durationCache.set(key, total);
+        return total;
+      }
+
+      function getDuration(el) {
+        const s = state.get(el);
+        return calcDuration(s.charIndex, s.moodIndex);
+      }
+
+      function calcElapsed(el) {
+        const s = state.get(el);
+        const steps = getSteps(el);
+        const pace = getPace(el);
+        let elapsed = 0;
+        for (let i = 0; i < s.step; i++) {
+          const step = steps[i];
+          if (step.type === 'char') {
+            elapsed += (CHAR_DELAY + (PAUSE_CHARS[step.ch] || 0)) * pace;
+          } else if (step.type === 'pause') {
+            elapsed += step.ms * pace;
+          }
+        }
+        return elapsed;
+      }
+
+      const snippets = container.querySelectorAll('.snippet');
+      const state = new Map();
+
+      snippets.forEach(el => {
+        const ci = parseInt(el.dataset.charIndex);
+        state.set(el, {
+          charIndex: ci,
+          moodIndex: 0,
+          audio: null,
+          playing: false,
+          step: 0,
+          typed: 0,
+          timer: null,
+        });
+        initSnippet(el);
+        renderHitLayer(el);
+        renderText(el, false);
+        updateTime(el);
+      });
+
+      function initSnippet(el) {
+        const btn = el.querySelector('.btn-play');
+        const progressWrap = el.querySelector('.progress-wrap');
+
+        btn.addEventListener('click', () => toggle(el));
+        progressWrap.addEventListener('click', e => seek(el, e));
+
+        el.querySelectorAll('.mood-btn').forEach(mb => {
+          mb.addEventListener('click', () => switchMood(el, parseInt(mb.dataset.mood)));
+        });
+
+        el.querySelector('.dialogue-hit').addEventListener('click', e => {
+          const wordEl = e.target.closest('.word');
+          if (!wordEl) return;
+          seekToWord(el, parseInt(wordEl.dataset.start));
+        });
+
+        loadAudio(el);
+      }
+
+      function loadAudio(el) {
+        const s = state.get(el);
+        const mood = getMood(el);
+
+        if (s.audio) {
+          s.audio.pause();
+          s.audio.removeAttribute('src');
+          s.audio = null;
+        }
+
+        if (mood.audio) {
+          const audio = new Audio(mood.audio);
+          s.audio = audio;
+          audio.addEventListener('loadedmetadata', () => updateTime(el));
+          audio.addEventListener('timeupdate', () => {
+            updateProgress(el);
+            updateTime(el);
+            syncTranscript(el);
+          });
+          audio.addEventListener('ended', () => onEnd(el));
+        }
+      }
+
+      function switchMood(el, mi) {
+        const s = state.get(el);
+        if (mi === s.moodIndex && !s.playing) {
+          snippets.forEach(other => {
+            if (other !== el && state.get(other).playing) pause(other);
+          });
+          play(el);
+          return;
+        }
+        if (mi === s.moodIndex) return;
+
+        if (s.playing) pause(el);
+
+        s.moodIndex = mi;
+        s.step = 0;
+        s.typed = 0;
+
+        el.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+        el.querySelector(`.mood-btn[data-mood="${mi}"]`).classList.add('selected');
+
+        el.querySelector('.progress-bar').style.width = '0%';
+        renderHitLayer(el);
+        renderText(el, false);
+        updateTime(el);
+
+        loadAudio(el);
+
+        snippets.forEach(other => {
+          if (other !== el && state.get(other).playing) pause(other);
+        });
+        play(el);
+      }
+
+      function toggle(el) {
+        const s = state.get(el);
+        if (s.playing) {
+          pause(el);
+        } else {
+          snippets.forEach(other => {
+            if (other !== el && state.get(other).playing) pause(other);
+          });
+          play(el);
+        }
+      }
+
+      function play(el) {
+        const s = state.get(el);
+        const btn = el.querySelector('.btn-play');
+        s.playing = true;
+        el.classList.add('active');
+        btn.classList.add('playing');
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+        renderText(el, true);
+
+        if (s.audio) {
+          s.audio.play();
+        } else {
+          typeNext(el);
+        }
+      }
+
+      function pause(el) {
+        const s = state.get(el);
+        const btn = el.querySelector('.btn-play');
+
+        s.playing = false;
+        btn.classList.remove('playing');
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21" /></svg>';
+
+        if (s.audio) {
+          s.audio.pause();
+        } else {
+          clearTimeout(s.timer);
+        }
+      }
+
+      function onEnd(el) {
+        const s = state.get(el);
+        const steps = getSteps(el);
+
+        s.playing = false;
+        s.step = steps.length;
+
+        const btn = el.querySelector('.btn-play');
+        btn.classList.remove('playing');
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21" /></svg>';
+
+        const text = getDisplayText(el);
+        s.typed = text.length;
+        renderText(el, false);
+        updateProgress(el);
+        updateTime(el);
+      }
+
+      function typeNext(el) {
+        const s = state.get(el);
+        if (!s.playing) return;
+
+        const steps = getSteps(el);
+        const pace = getPace(el);
+
+        if (s.step >= steps.length) {
+          onEnd(el);
+          return;
+        }
+
+        const step = steps[s.step];
+        s.step++;
+        updateProgress(el);
+        updateTime(el);
+
+        switch (step.type) {
+          case 'char': {
+            s.typed = step.index + 1;
+            renderText(el, true);
+            const punctPause = PAUSE_CHARS[step.ch] || 0;
+            s.timer = setTimeout(() => typeNext(el), (CHAR_DELAY + punctPause) * pace);
+            break;
+          }
+          case 'pause': {
+            s.timer = setTimeout(() => typeNext(el), step.ms * pace);
+            break;
+          }
+        }
+      }
+
+      function syncTranscript(el) {
+        const s = state.get(el);
+        if (!s.audio || !s.audio.duration) return;
+
+        const text = getDisplayText(el);
+        const pct = s.audio.currentTime / s.audio.duration;
+        const target = Math.floor(pct * text.length);
+
+        if (target > s.typed) {
+          s.typed = target;
+          renderText(el, true);
+        }
+      }
+
+      function renderText(el, showCursor) {
+        const s = state.get(el);
+        const text = getDisplayText(el);
+        const textEl = el.querySelector('.dialogue-text');
+        const spoken = text.slice(0, s.typed);
+        const unspoken = text.slice(s.typed);
+        const cursor = showCursor ? '<span class="cursor-wrap"><span class="cursor"></span></span>' : '';
+        const rest = unspoken ? '<span class="unspoken">' + unspoken + '</span>' : '';
+        textEl.innerHTML = spoken + cursor + rest;
+      }
+
+      function renderHitLayer(el) {
+        const text = getDisplayText(el);
+        const hitEl = el.querySelector('.dialogue-hit');
+        let html = '';
+        const re = /(\S+)/g;
+        let last = 0;
+        let m;
+        while ((m = re.exec(text)) !== null) {
+          if (m.index > last) html += text.slice(last, m.index);
+          html += '<span class="word" data-start="' + m.index + '">' + m[0] + '</span>';
+          last = m.index + m[0].length;
+        }
+        if (last < text.length) html += text.slice(last);
+        hitEl.innerHTML = html;
+      }
+
+      function seekToWord(el, charIndex) {
+        const s = state.get(el);
+        const steps = getSteps(el);
+
+        let targetStep = steps.length;
+        for (let i = 0; i < steps.length; i++) {
+          if (steps[i].type === 'char' && steps[i].index >= charIndex) {
+            targetStep = i;
+            break;
+          }
+        }
+
+        if (s.playing) pause(el);
+
+        s.step = targetStep;
+        s.typed = charIndex;
+        renderText(el, true);
+        updateProgress(el);
+        updateTime(el);
+
+        snippets.forEach(other => {
+          if (other !== el && state.get(other).playing) pause(other);
+        });
+        play(el);
+      }
+
+      function updateProgress(el) {
+        const s = state.get(el);
+        if (s.audio && s.audio.duration) {
+          const pct = (s.audio.currentTime / s.audio.duration) * 100;
+          el.querySelector('.progress-bar').style.width = pct + '%';
+        } else {
+          const total = getDuration(el);
+          const elapsed = calcElapsed(el);
+          const pct = total > 0 ? (elapsed / total) * 100 : 0;
+          el.querySelector('.progress-bar').style.width = pct + '%';
+        }
+      }
+
+      function updateTime(el) {
+        const s = state.get(el);
+        const display = el.querySelector('.time-display');
+        if (s.audio && s.audio.duration) {
+          display.textContent = fmt(s.audio.currentTime) + ' / ' + fmt(s.audio.duration);
+        } else {
+          const total = getDuration(el);
+          const elapsed = calcElapsed(el);
+          display.textContent = fmt(elapsed / 1000) + ' / ' + fmt(total / 1000);
+        }
+      }
+
+      function seek(el, e) {
+        const s = state.get(el);
+        const rect = el.querySelector('.progress-wrap').getBoundingClientRect();
+        const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+
+        if (s.audio && s.audio.duration) {
+          s.audio.currentTime = pct * s.audio.duration;
+          s.typed = Math.floor(pct * getDisplayText(el).length);
+          renderText(el, true);
+        } else {
+          const total = getDuration(el);
+          const targetMs = pct * total;
+          const steps = getSteps(el);
+          const pace = getPace(el);
+          let elapsed = 0;
+          let targetStep = steps.length;
+          let targetTyped = 0;
+          for (let i = 0; i < steps.length; i++) {
+            const step = steps[i];
+            let stepMs = 0;
+            if (step.type === 'char') {
+              stepMs = (CHAR_DELAY + (PAUSE_CHARS[step.ch] || 0)) * pace;
+              targetTyped = step.index + 1;
+            } else if (step.type === 'pause') {
+              stepMs = step.ms * pace;
+            }
+            elapsed += stepMs;
+            if (elapsed >= targetMs) {
+              targetStep = i + 1;
+              break;
+            }
+          }
+
+          if (s.playing) pause(el);
+          s.step = targetStep;
+          s.typed = targetTyped;
+          renderText(el, true);
+          updateProgress(el);
+          updateTime(el);
+
+          snippets.forEach(other => {
+            if (other !== el && state.get(other).playing) pause(other);
+          });
+          play(el);
+        }
+      }
+
+      function fmt(sec) {
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return m + ':' + (s < 10 ? '0' : '') + s;
+      }
+    })();
+  </script>
+
+</body>
+
+</html>
