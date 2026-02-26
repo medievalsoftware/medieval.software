@@ -14,6 +14,7 @@
 
 	let show = {
 		posts: false,
+		pages: false,
 		content: true,
 		projects: false,
 		links: false
@@ -21,8 +22,9 @@
 
 	/** @type import("$lib/types").Link[] */
 	let links = [
+		{ text: 'Discord', url: 'https://discord.gg/TV8sgft47d', img: '/images/discord.png' },
 		{ text: 'GitHub', url: 'https://github.com/medievalsoftware', img: '/images/github.png' },
-		{ text: 'Discord', url: 'https://discord.gg/TV8sgft47d', img: '/images/discord.png' }
+		{ text: 'Codeberg', url: 'https://codeberg.org/medievalsoftware', img: '/images/codeberg.svg' }
 	];
 
 	/** @type import("$lib/types").Link[] */
@@ -51,6 +53,7 @@
 			on:click={() => {
 				show.content = true;
 				show.posts = false;
+				show.pages = false;
 				show.projects = false;
 				show.links = false;
 			}}
@@ -64,6 +67,22 @@
 				show.posts = !show.posts;
 				show.content = !show.posts;
 				if (show.posts) {
+					show.pages = false;
+					show.projects = false;
+					show.links = false;
+				}
+			}}
+		/>
+		<Link
+			caption="Projects"
+			href="#"
+			img="/images/anvil.png"
+			class={show.pages ? 'active' : ''}
+			on:click={() => {
+				show.pages = !show.pages;
+				show.content = !show.pages;
+				if (show.pages) {
+					show.posts = false;
 					show.projects = false;
 					show.links = false;
 				}
@@ -93,6 +112,7 @@
 				show.content = !show.links;
 				if (show.links) {
 					show.posts = false;
+					show.pages = false;
 					show.projects = false;
 				}
 			}}
@@ -123,6 +143,54 @@
 						</div>
 					</a>
 				{/each}
+			</div>
+		</nav>
+	{/if}
+
+	{#if show.pages}
+		<nav id="mobile-pages" class="groups">
+			<div class="group">
+				<h2>Projects</h2>
+
+				<h3 class="section-title">Forge</h3>
+				<p class="section-desc">Crafted in-house</p>
+				<div class="page-cards">
+					<a class="page-card" href="#" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
+						<div class="page-card-icon"><img src="/images/x.png" alt="Nothing" /></div>
+						<div class="page-card-info">
+							<span class="name">Nothing</span>
+							<span class="desc">Coming soon</span>
+						</div>
+					</a>
+				</div>
+
+				<hr />
+
+				<h3 class="section-title">Guild</h3>
+				<p class="section-desc">From friends and allies</p>
+				<div class="page-cards">
+					<a class="page-card" href="https://kingscrook.itch.io/kings-crook" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
+						<div class="page-card-icon"><img style="border-radius: var(--radius-xs)" src="/images/kings_crook.png" alt="King's Crook" /></div>
+						<div class="page-card-info">
+							<span class="name">King's Crook</span>
+							<span class="desc">Open-world RPG built from scratch in pure C</span>
+						</div>
+					</a>
+				</div>
+
+				<hr />
+
+				<h3 class="section-title">Frontier</h3>
+				<p class="section-desc">Discoveries from afar</p>
+				<div class="page-cards">
+					<a class="page-card" href="https://flycast.medieval.software/" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
+						<div class="page-card-icon"><img src="/images/flycast.png" alt="Flycast WASM" /></div>
+						<div class="page-card-info">
+							<span class="name">Flycast WASM</span>
+							<span class="desc">Sega Dreamcast emulation in the browser via WebAssembly</span>
+						</div>
+					</a>
+				</div>
 			</div>
 		</nav>
 	{/if}
@@ -164,10 +232,22 @@
 					class:active={show.posts}
 					on:click={() => {
 						show.posts = !show.posts;
+						if (show.posts) show.pages = false;
 					}}
 				>
 					<img src="/images/posts.png" alt="Posts" />
 					<span>Posts</span>
+				</a>
+				<a
+					href={'#pages'}
+					class:active={show.pages}
+					on:click={() => {
+						show.pages = !show.pages;
+						if (show.pages) show.posts = false;
+					}}
+				>
+					<img src="/images/anvil.png" alt="Projects" />
+					<span>Projects</span>
 				</a>
 			</div>
 
@@ -213,6 +293,54 @@
 				</div>
 			</nav>
 		{/if}
+
+		{#if show.pages}
+			<nav class="groups pages" transition:slide={{ axis: 'x' }}>
+				<div class="group">
+					<h2>Projects</h2>
+
+					<h3 class="section-title">Forge</h3>
+					<p class="section-desc">Crafted in-house</p>
+					<div class="page-cards">
+						<a class="page-card" href="#">
+							<div class="page-card-icon"><img src="/images/x.png" alt="Nothing" /></div>
+							<div class="page-card-info">
+								<span class="name">Nothing</span>
+								<span class="desc">Coming soon</span>
+							</div>
+						</a>
+					</div>
+
+					<hr />
+
+					<h3 class="section-title">Guild</h3>
+					<p class="section-desc">From friends and allies</p>
+					<div class="page-cards">
+						<a class="page-card" href="https://kingscrook.itch.io/kings-crook">
+							<div class="page-card-icon"><img style="border-radius: var(--radius-xs)" src="/images/kings_crook.png" alt="King's Crook" /></div>
+							<div class="page-card-info">
+								<span class="name">King's Crook</span>
+								<span class="desc">Open-world RPG built from scratch in pure C</span>
+							</div>
+						</a>
+					</div>
+
+					<hr />
+
+					<h3 class="section-title">Frontier</h3>
+					<p class="section-desc">Discoveries from afar</p>
+					<div class="page-cards">
+						<a class="page-card" href="https://flycast.medieval.software/">
+							<div class="page-card-icon"><img src="/images/flycast.png" alt="Flycast WASM" /></div>
+							<div class="page-card-info">
+								<span class="name">Flycast WASM</span>
+								<span class="desc">Sega Dreamcast emulation in the browser via WebAssembly</span>
+							</div>
+						</a>
+					</div>
+				</div>
+			</nav>
+		{/if}
 	</div>
 	<!-- !DESKTOP -->
 
@@ -222,6 +350,7 @@
 		<main
 			on:click={() => {
 				show.posts = false;
+				show.pages = false;
 				show.content = true;
 			}}
 		>

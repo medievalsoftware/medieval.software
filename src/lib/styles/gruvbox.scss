@@ -70,6 +70,15 @@
   }
 }
 
+:root {
+  --radius-xs: 0.15rem;
+  --radius-sm: 0.25rem;
+  --radius: 0.4rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-round: 50%;
+}
+
 .red {
   color: var(--red);
 }

@@ -11,7 +11,7 @@ pre code {
 
 .snip,
 .code {
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   border: 0.25px solid var(--bg);
   outline: 0.5px solid var(--bg3);
   box-shadow: 2px 2px 8px rgb(0, 0, 0, 0.5);
@@ -24,7 +24,7 @@ code {
   overflow-x: auto;
   display: block;
   tab-size: 4;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   border: 0.25px solid var(--bg);
   outline: 0.5px solid var(--bg3);
   box-shadow: 2px 2px 8px rgb(0, 0, 0, 0.5);

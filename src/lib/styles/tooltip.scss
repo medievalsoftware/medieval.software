@@ -21,7 +21,7 @@
   margin-bottom: 5px;
   padding: 0.5em;
   width: max-content;
-  border-radius: 0.5em;
+  border-radius: var(--radius-lg);
   background-color: #000;
   background-color: hsla(0, 0%, 20%, 0.9);
   color: #fff;

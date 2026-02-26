@@ -78,7 +78,7 @@
 }
 
 .rounded {
-  border-radius: 0.5rem;
+  border-radius: var(--radius-lg);
 }
 
 .squared {
@@ -164,13 +164,13 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   background-color: color-mix(in srgb, var(--fg4) 25%, transparent)
 }
 
 table {
   padding: 0.25em;
-  border-radius: 0.1em;
+  border-radius: var(--radius-xs);
   border-collapse: collapse;
   border: 0.25px solid var(--bg);
   outline: 0.5px solid var(--bg3);
@@ -220,6 +220,7 @@ main {
 }
 
 #mobile-posts,
+#mobile-pages,
 #mobile-bar {
   display: none;
 }
@@ -285,7 +286,7 @@ nav a {
   flex-direction: row;
   gap: 1rem;
   padding: 0.4rem 0.4rem;
-  border-radius: 0.3rem;
+  border-radius: var(--radius);
   align-items: center;
   min-width: max-content;
 }
@@ -319,8 +320,91 @@ nav.groups a .date {
   color: var(--fg4);
 }
 
+.section-title {
+  font-size: 0.75em;
+  font-weight: bold;
+  color: var(--fg2);
+  margin: 0 0 0.8rem 0;
+}
+
+.section-desc {
+  font-size: 0.6em;
+  color: var(--fg4);
+  margin: -0.6rem 0 0.8rem 0;
+}
+
+nav .group hr {
+  border: none;
+  border-top: 1px solid var(--bg1);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 20%);
+  margin: 0.8rem 0;
+}
+
+nav.pages {
+  overflow: hidden;
+}
+
+nav.pages .group {
+  min-width: 13em;
+}
+
+.page-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+nav a.page-card {
+  display: grid;
+  grid-template-columns: 3em 1fr;
+  gap: 0.3rem;
+  align-items: center;
+  padding: 0.3rem;
+  border-radius: var(--radius);
+  background: var(--bg1);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+a.page-card .page-card-info {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 0.2rem;
+  /* padding-left: 0.4rem; */
+}
+
+a.page-card .page-card-icon {
+  display: flex;
+  align-items: center;
+  /* padding-right: 0.3rem; */
+  /* border-right: 1px solid var(--bg2); */
+}
+
+nav a.page-card img {
+  width: 3em;
+  max-height: none;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+a.page-card .name {
+  font-weight: bold;
+  font-size: 0.8em;
+  color: var(--fg);
+}
+
+a.page-card .desc {
+  font-size: 0.65em;
+  color: var(--fg4);
+  line-height: 1.2;
+}
+
+a.page-card:hover {
+  background: var(--bg_s);
+}
+
 nav a img {
-  max-height: 1.5em;
+  max-height: 2em;
 }
 
 nav a img.external {
@@ -529,14 +613,16 @@ blockquote p {
     min-height: -webkit-fill-available;
   }
 
-  #mobile-posts {
+  #mobile-posts,
+  #mobile-pages {
     display: flex;
     flex: 1;
     box-sizing: border-box;
     overflow: auto;
   }
 
-  #mobile-posts a {
+  #mobile-posts a,
+  #mobile-pages a {
     font-size: 1rem;
   }
 
@@ -570,7 +656,7 @@ blockquote p {
     align-items: center;
     text-align: center;
     font-size: 0.7em;
-    border-radius: 0.25rem;
+    border-radius: var(--radius-sm);
     border-left: 2px solid var(--bg_s);
     border-right: 2px solid var(--bg_s);
     padding-left: 1em;
