@@ -15,6 +15,7 @@
 	let show = {
 		posts: false,
 		pages: false,
+		showcases: false,
 		content: true,
 		projects: false,
 		links: false
@@ -54,6 +55,7 @@
 				show.content = true;
 				show.posts = false;
 				show.pages = false;
+				show.showcases = false;
 				show.projects = false;
 				show.links = false;
 			}}
@@ -68,6 +70,7 @@
 				show.content = !show.posts;
 				if (show.posts) {
 					show.pages = false;
+					show.showcases = false;
 					show.projects = false;
 					show.links = false;
 				}
@@ -83,6 +86,23 @@
 				show.content = !show.pages;
 				if (show.pages) {
 					show.posts = false;
+					show.showcases = false;
+					show.projects = false;
+					show.links = false;
+				}
+			}}
+		/>
+		<Link
+			caption="Showcases"
+			href="#"
+			img="/images/lute.png"
+			class={show.showcases ? 'active' : ''}
+			on:click={() => {
+				show.showcases = !show.showcases;
+				show.content = !show.showcases;
+				if (show.showcases) {
+					show.posts = false;
+					show.pages = false;
 					show.projects = false;
 					show.links = false;
 				}
@@ -113,6 +133,7 @@
 				if (show.links) {
 					show.posts = false;
 					show.pages = false;
+					show.showcases = false;
 					show.projects = false;
 				}
 			}}
@@ -195,6 +216,23 @@
 		</nav>
 	{/if}
 
+	{#if show.showcases}
+		<nav id="mobile-showcases" class="groups">
+			<div class="group">
+				<h2>Showcases</h2>
+				<div class="page-cards">
+					<a class="page-card" href="/voice-reels" on:click={() => { show.showcases = false; show.content = true; scroll_to_top(); }}>
+						<div class="page-card-icon"><img src="/images/theatre_mask.png" alt="Voice Reels" /></div>
+						<div class="page-card-info">
+							<span class="name">Voice Reels</span>
+							<span class="desc">Exploring voice acting with character snippets and scenes</span>
+						</div>
+					</a>
+				</div>
+			</div>
+		</nav>
+	{/if}
+
 	<!-- {#if show.projects}
 		<nav id="mobile-links" class="groups">
 			<div class="group">
@@ -232,7 +270,7 @@
 					class:active={show.posts}
 					on:click={() => {
 						show.posts = !show.posts;
-						if (show.posts) show.pages = false;
+						if (show.posts) { show.pages = false; show.showcases = false; }
 					}}
 				>
 					<img src="/images/posts.png" alt="Posts" />
@@ -243,11 +281,22 @@
 					class:active={show.pages}
 					on:click={() => {
 						show.pages = !show.pages;
-						if (show.pages) show.posts = false;
+						if (show.pages) { show.posts = false; show.showcases = false; }
 					}}
 				>
 					<img src="/images/anvil.png" alt="Projects" />
 					<span>Projects</span>
+				</a>
+				<a
+					href={'#showcases'}
+					class:active={show.showcases}
+					on:click={() => {
+						show.showcases = !show.showcases;
+						if (show.showcases) { show.posts = false; show.pages = false; }
+					}}
+				>
+					<img src="/images/lute.png" alt="Showcases" />
+					<span>Showcases</span>
 				</a>
 			</div>
 
@@ -341,6 +390,23 @@
 				</div>
 			</nav>
 		{/if}
+
+		{#if show.showcases}
+			<nav class="groups pages" transition:slide={{ axis: 'x' }}>
+				<div class="group">
+					<h2>Showcases</h2>
+					<div class="page-cards">
+						<a class="page-card" href="/voice-reels">
+							<div class="page-card-icon"><img src="/images/theatre_mask.png" alt="Voice Reels" /></div>
+							<div class="page-card-info">
+								<span class="name">Voice Reels</span>
+								<span class="desc">Exploring voice acting with character snippets and scenes</span>
+							</div>
+						</a>
+					</div>
+				</div>
+			</nav>
+		{/if}
 	</div>
 	<!-- !DESKTOP -->
 
@@ -351,6 +417,7 @@
 			on:click={() => {
 				show.posts = false;
 				show.pages = false;
+				show.showcases = false;
 				show.content = true;
 			}}
 		>

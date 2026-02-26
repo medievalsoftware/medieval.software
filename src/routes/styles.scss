@@ -221,6 +221,7 @@ main {
 
 #mobile-posts,
 #mobile-pages,
+#mobile-showcases,
 #mobile-bar {
   display: none;
 }
@@ -614,7 +615,8 @@ blockquote p {
   }
 
   #mobile-posts,
-  #mobile-pages {
+  #mobile-pages,
+  #mobile-showcases {
     display: flex;
     flex: 1;
     box-sizing: border-box;
@@ -622,7 +624,8 @@ blockquote p {
   }
 
   #mobile-posts a,
-  #mobile-pages a {
+  #mobile-pages a,
+  #mobile-showcases a {
     font-size: 1rem;
   }
 
