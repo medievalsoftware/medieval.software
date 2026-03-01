@@ -14,6 +14,7 @@
 		<title>Medieval Software - {data.meta.title}</title>
 	{/if}
 	{#if data.meta.description}
+		<meta name="description" content="{data.meta.description}"/>
 		<meta property="og:description" content="{data.meta.description}"/>
 	{/if}
 	{#if data.meta.image}

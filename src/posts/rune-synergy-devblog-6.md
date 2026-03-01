@@ -1,6 +1,7 @@
 ---
 title: Rune Synergy
 subtitle: Devblog 6
+description: Building a hybrid OpenGL and software renderer, creating an interface system, and tackling scene rendering.
 date: '17 July 2023'
 icon: /images/rune-synergy.png
 publish: true

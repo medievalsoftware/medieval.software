@@ -1,6 +1,7 @@
 ---
 title: Rune Synergy
 subtitle: Devblog 7
+description: Returning after months exploring Unreal Engine 5 and C++, then refocusing on the Go client with renewed direction.
 date: 1 December 2023
 publish: true
 icon: /images/rune-synergy.png

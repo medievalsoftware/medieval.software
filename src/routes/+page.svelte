@@ -2,9 +2,9 @@
 	<title>Medieval Software - Home</title>
 	<meta property="og:title" content="Medieval Software">
 	<meta property="og:description"
-		content="Medieval Software is an indie game development studio crafting archaic medievel-themed games and software.">
+		content="Medieval Software is an indie dev blog covering software, reverse engineering, voice acting, music, and creative projects.">
 	<meta name="description"
-		content="Medieval Software is an indie game development studio crafting archaic medievel-themed games and software.">
+		content="Medieval Software is an indie dev blog covering software, reverse engineering, voice acting, music, and creative projects.">
 	<meta property="og:url" content="https://medieval.software/">
 </svelte:head>
 

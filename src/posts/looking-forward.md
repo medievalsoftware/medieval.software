@@ -1,6 +1,7 @@
 ---
 title: Rune Synergy
 subtitle: Looking Forward
+description: Introducing Rune Synergy, a crowdsourced RuneScape private server built on a game client rewritten in Go.
 date: '3 January 2023'
 publish: true
 icon: /images/rune-synergy.png

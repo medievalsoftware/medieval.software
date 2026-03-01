@@ -1,6 +1,7 @@
 ---
 title: Rune Synergy
 subtitle: Devblog 5
+description: Software rendering RuneScape in Go — 3D models, NPCs, terrain, objects, and the HSL color system.
 date: '1 June 2023'
 publish: true
 icon: /images/rune-synergy.png

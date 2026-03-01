@@ -1,6 +1,7 @@
 ---
 title: Rune Synergy
 subtitle: Devblog 3
+description: Experimenting with Go scripting via Yaegi, code generation for OSRS items and enums, and entity component system design.
 date: '18 March 2023'
 publish: true
 icon: /images/rune-synergy.png

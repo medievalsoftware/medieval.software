@@ -3,7 +3,7 @@ title: p5.js Test
 date: '17 February 2026'
 publish: true
 icon: /category/test.png
-description: Testing p5.js integration with Svelte
+description: Interactive p5.js sketches running in the browser, integrated with Svelte components.
 ---
 <script>
 import P5 from '$lib/components/P5.svelte';

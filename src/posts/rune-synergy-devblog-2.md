@@ -1,6 +1,7 @@
 ---
 title: Rune Synergy
 subtitle: Devblog 2
+description: Designing the microservice architecture, building a Go game client with OpenGL, and implementing custom network protocols.
 date: '12 February 2023'
 publish: true
 icon: /images/rune-synergy.png
