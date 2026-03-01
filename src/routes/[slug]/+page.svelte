@@ -10,8 +10,10 @@
 <svelte:head>
 	{#if data.meta.subtitle}
 		<title>Medieval Software - {data.meta.title} - {data.meta.subtitle}</title>
+		<meta property="og:title" content="{data.meta.title} - {data.meta.subtitle}"/>
 	{:else}
 		<title>Medieval Software - {data.meta.title}</title>
+		<meta property="og:title" content="{data.meta.title}"/>
 	{/if}
 	{#if data.meta.description}
 		<meta name="description" content="{data.meta.description}"/>
