@@ -2,6 +2,7 @@
 title: Rune Synergy
 subtitle: Devblog 8
 description: Catching up on a year of progress — RuneBlend tooling, engine rewrites, rendering milestones, and the state of the Go client.
+image: /posts/devblog-8/timeline.png
 date: 30 September 2024
 publish: true
 icon: /images/rune-synergy.png

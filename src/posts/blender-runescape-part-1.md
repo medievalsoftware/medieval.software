@@ -2,6 +2,7 @@
 title: 'Blender & RuneScape'
 subtitle: 'Part 1: Models'
 description: Importing RuneScape 2 models into Blender, solving face priority rendering, and building a custom Python importer addon.
+image: /posts/blender-1/shader.png
 date: '18 March 2023'
 publish: true
 icon: /category/blender-rs.png

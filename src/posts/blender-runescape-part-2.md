@@ -2,6 +2,7 @@
 title: 'Blender & RuneScape'
 subtitle: 'Part 2: Animations'
 description: Rigging and animating RuneScape models in Blender with custom bone structures, vertex weights, and animation playback.
+image: /posts/blender-2/sphere-1.png
 date: '14 April 2023'
 publish: true
 icon: /category/blender-rs.png

@@ -1,6 +1,7 @@
 ---
 title: Fall Cleaning
 description: Migrating from WordPress to a self-hosted SvelteKit site powered by Bun, styled with the Gruvbox color palette.
+image: /posts/fall-cleaning/gruvbox.png
 date: 3 October 2023
 publish: true
 icon: /category/cleaning.png

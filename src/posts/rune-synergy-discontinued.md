@@ -2,6 +2,7 @@
 title: Rune Synergy
 subtitle: Discontinued
 description: Reflecting on discontinuing Rune Synergy after two years of development and looking ahead to new creative directions.
+image: /posts/looking-forward/runesynergy.png
 date: 13 December 2024
 publish: true
 icon: /images/rune-synergy.png

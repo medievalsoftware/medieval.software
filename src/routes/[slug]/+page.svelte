@@ -18,7 +18,7 @@
 		<meta property="og:description" content="{data.meta.description}"/>
 	{/if}
 	{#if data.meta.image}
-		<meta property="og:image" content="{data.meta.image}"/>
+		<meta property="og:image" content="https://medieval.software{data.meta.image}"/>
 	{/if}
 </svelte:head>
 

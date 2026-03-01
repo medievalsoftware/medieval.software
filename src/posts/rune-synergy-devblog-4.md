@@ -2,6 +2,7 @@
 title: Rune Synergy
 subtitle: Devblog 4
 description: Recovering from burnout with better task tracking, reorganizing project priorities, and setting up sqlc with PostgreSQL.
+image: /posts/devblog-4/tracker.png
 date: '4 May 2023'
 publish: true
 icon: /images/rune-synergy.png

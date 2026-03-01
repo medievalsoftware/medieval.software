@@ -2,6 +2,7 @@
 title: Rune Synergy
 subtitle: Devblog 1
 description: Reverse engineering RuneScape's audio synthesizer, exploring the JagFX sound format, and planning the Go client architecture.
+image: /posts/devblog-1/jagfx-1.png
 date: '14 January 2023'
 publish: true
 icon: /images/rune-synergy.png
