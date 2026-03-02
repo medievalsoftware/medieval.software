@@ -176,11 +176,11 @@
 				<h3 class="section-title">Forge</h3>
 				<p class="section-desc">Crafted in-house</p>
 				<div class="page-cards">
-					<a class="page-card" href="#" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
-						<div class="page-card-icon"><img src="/images/x.png" alt="Nothing" /></div>
+					<a class="page-card" href="https://github.com/medievalsoftware/herald" target="_blank" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
+						<div class="page-card-icon"><img src="/images/herald.png" alt="Herald" /></div>
 						<div class="page-card-info">
-							<span class="name">Nothing</span>
-							<span class="desc">Coming soon</span>
+							<span class="name">Herald</span>
+							<span class="desc">Terminal IRC client over WebSocket</span>
 						</div>
 					</a>
 				</div>
@@ -190,7 +190,7 @@
 				<h3 class="section-title">Guild</h3>
 				<p class="section-desc">From friends and allies</p>
 				<div class="page-cards">
-					<a class="page-card" href="https://kingscrook.itch.io/kings-crook" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
+					<a class="page-card" href="https://kingscrook.itch.io/kings-crook" target="_blank" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
 						<div class="page-card-icon"><img style="border-radius: var(--radius-xs)" src="/images/kings_crook.png" alt="King's Crook" /></div>
 						<div class="page-card-info">
 							<span class="name">King's Crook</span>
@@ -204,7 +204,7 @@
 				<h3 class="section-title">Frontier</h3>
 				<p class="section-desc">Discoveries from afar</p>
 				<div class="page-cards">
-					<a class="page-card" href="https://flycast.medieval.software/" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
+					<a class="page-card" href="https://flycast.medieval.software/" target="_blank" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
 						<div class="page-card-icon"><img src="/images/flycast.png" alt="Flycast WASM" /></div>
 						<div class="page-card-info">
 							<span class="name">Flycast WASM</span>
@@ -351,11 +351,11 @@
 					<h3 class="section-title">Forge</h3>
 					<p class="section-desc">Crafted in-house</p>
 					<div class="page-cards">
-						<a class="page-card" href="#">
-							<div class="page-card-icon"><img src="/images/x.png" alt="Nothing" /></div>
+						<a class="page-card" href="https://github.com/medievalsoftware/herald" target="_blank">
+							<div class="page-card-icon"><img src="/images/herald.png" alt="Herald" /></div>
 							<div class="page-card-info">
-								<span class="name">Nothing</span>
-								<span class="desc">Coming soon</span>
+								<span class="name">Herald</span>
+								<span class="desc">Terminal IRC client over WebSocket</span>
 							</div>
 						</a>
 					</div>
@@ -365,7 +365,7 @@
 					<h3 class="section-title">Guild</h3>
 					<p class="section-desc">From friends and allies</p>
 					<div class="page-cards">
-						<a class="page-card" href="https://kingscrook.itch.io/kings-crook">
+						<a class="page-card" href="https://kingscrook.itch.io/kings-crook" target="_blank">
 							<div class="page-card-icon"><img style="border-radius: var(--radius-xs)" src="/images/kings_crook.png" alt="King's Crook" /></div>
 							<div class="page-card-info">
 								<span class="name">King's Crook</span>
@@ -379,7 +379,7 @@
 					<h3 class="section-title">Frontier</h3>
 					<p class="section-desc">Discoveries from afar</p>
 					<div class="page-cards">
-						<a class="page-card" href="https://flycast.medieval.software/">
+						<a class="page-card" href="https://flycast.medieval.software/" target="_blank">
 							<div class="page-card-icon"><img src="/images/flycast.png" alt="Flycast WASM" /></div>
 							<div class="page-card-info">
 								<span class="name">Flycast WASM</span>

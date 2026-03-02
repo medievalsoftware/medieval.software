@@ -1,6 +1,6 @@
-@import '$lib/styles/tooltip.scss';
-@import '$lib/styles/gruvbox.scss';
-@import '$lib/styles/highlight.scss';
+@use '$lib/styles/tooltip.scss';
+@use '$lib/styles/gruvbox.scss';
+@use '$lib/styles/highlight.scss';
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans&family=Roboto:wght@400;500&display=swap');
 @import url('https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css');
 
