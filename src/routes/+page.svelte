@@ -52,8 +52,18 @@
 					<a
 						href="https://go.dev/"
 						target="_blank"
-						class="tech devicon-go-original-wordmark colored"
+						class="tech glow-go devicon-go-original-wordmark colored"
 					/>
+				</span>
+
+				<span data-tooltip="Language: Zig">
+					<a
+						href="https://ziglang.org/"
+						target="_blank"
+						class="tech glow-zig"
+					>
+						<img src="/images/zig-mark.svg" alt="Zig" />
+					</a>
 				</span>
 
 				<span data-tooltip="Language: C">
