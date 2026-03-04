@@ -6,7 +6,6 @@
 	import Links from '$lib/components/Links.svelte';
 
 	import { page } from '$app/stores';
-	import { slide } from 'svelte/transition';
 	import dateFormat from 'dateformat';
 
 	$: route = $page.url.pathname;
@@ -36,6 +35,18 @@
 		if (content) {
 			content.scrollTo(0, 0);
 		}
+	};
+
+	let openPanel = (/** @type {string} */ panel) => {
+		show.posts = panel === 'posts';
+		show.pages = panel === 'pages';
+		show.showcases = panel === 'showcases';
+	};
+
+	let closeAllPanels = () => {
+		show.posts = false;
+		show.pages = false;
+		show.showcases = false;
 	};
 
 	/** @type {import('./$types').LayoutData} */
@@ -185,8 +196,6 @@
 					</a>
 				</div>
 
-				<hr />
-
 				<h3 class="section-title">Guild</h3>
 				<p class="section-desc">From friends and allies</p>
 				<div class="page-cards">
@@ -198,8 +207,6 @@
 						</div>
 					</a>
 				</div>
-
-				<hr />
 
 				<h3 class="section-title">Frontier</h3>
 				<p class="section-desc">Discoveries from afar</p>
@@ -256,69 +263,60 @@
 	<!-- !MOBILE -->
 
 	<!-- DESKTOP -->
-	<div class="sidebar">
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div class="sidebar" on:mouseleave={closeAllPanels}>
 		<nav>
-			<header>Medieval Software</header>
+			<!-- svelte-ignore a11y-no-static-element-interactions -->
+			<header on:mouseenter={closeAllPanels}>Medieval Software</header>
 
 			<div class="group">
-				<a href="/" class:active={route === '/'}>
+				<!-- svelte-ignore a11y-no-static-element-interactions -->
+				<a href="/" class:active={route === '/'} on:mouseenter={closeAllPanels}>
 					<img src="/images/home.png" alt="Home" />
 					<span>Home</span>
 				</a>
 				<a
 					href={'#posts'}
 					class:active={show.posts}
-					on:click={() => {
-						show.posts = !show.posts;
-						if (show.posts) { show.pages = false; show.showcases = false; }
-					}}
+					on:mouseenter={() => openPanel('posts')}
 				>
 					<img src="/images/posts.png" alt="Posts" />
 					<span>Posts</span>
+					<span class="panel-arrow">›</span>
 				</a>
 				<a
-					href={'#pages'}
+					href={'#projects'}
 					class:active={show.pages}
-					on:click={() => {
-						show.pages = !show.pages;
-						if (show.pages) { show.posts = false; show.showcases = false; }
-					}}
+					on:mouseenter={() => openPanel('pages')}
 				>
 					<img src="/images/anvil.png" alt="Projects" />
 					<span>Projects</span>
+					<span class="panel-arrow">›</span>
 				</a>
 				<a
 					href={'#showcases'}
 					class:active={show.showcases}
-					on:click={() => {
-						show.showcases = !show.showcases;
-						if (show.showcases) { show.posts = false; show.pages = false; }
-					}}
+					on:mouseenter={() => openPanel('showcases')}
 				>
 					<img src="/images/lute.png" alt="Showcases" />
 					<span>Showcases</span>
+					<span class="panel-arrow">›</span>
 				</a>
 			</div>
 
-			<!-- <div class="group">
-				<Links
-					caption="Projects"
-					links={projects}
-					on:click={() => {
-						scroll_to_top();
-					}}
-				/>
-			</div> -->
+			<!-- svelte-ignore a11y-no-static-element-interactions -->
+			<div class="nav-links" on:mouseenter={closeAllPanels}>
+				<Links {links} />
+			</div>
 
-			<Links {links} />
-
-			<footer>
+			<!-- svelte-ignore a11y-no-static-element-interactions -->
+			<footer on:mouseenter={closeAllPanels}>
 				<img src="/images/logo.png" alt="Medieval Software" />
 			</footer>
 		</nav>
 
 		{#if show.posts}
-			<nav class="groups posts" transition:slide={{ axis: 'x' }}>
+			<nav class="groups posts" >
 				<div class="group">
 					<h2>Posts</h2>
 					{#each data.posts as post}
@@ -344,7 +342,7 @@
 		{/if}
 
 		{#if show.pages}
-			<nav class="groups pages" transition:slide={{ axis: 'x' }}>
+			<nav class="groups pages" >
 				<div class="group">
 					<h2>Projects</h2>
 
@@ -360,8 +358,6 @@
 						</a>
 					</div>
 
-					<hr />
-
 					<h3 class="section-title">Guild</h3>
 					<p class="section-desc">From friends and allies</p>
 					<div class="page-cards">
@@ -373,8 +369,6 @@
 							</div>
 						</a>
 					</div>
-
-					<hr />
 
 					<h3 class="section-title">Frontier</h3>
 					<p class="section-desc">Discoveries from afar</p>
@@ -392,7 +386,7 @@
 		{/if}
 
 		{#if show.showcases}
-			<nav class="groups pages" transition:slide={{ axis: 'x' }}>
+			<nav class="groups pages" >
 				<div class="group">
 					<h2>Showcases</h2>
 					<div class="page-cards">

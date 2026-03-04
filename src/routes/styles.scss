@@ -271,6 +271,10 @@ nav .group {
 }
 
 nav .group:last-of-type {
+  margin-bottom: 1rem;
+}
+
+nav .nav-links {
   margin-bottom: auto;
 }
 
@@ -290,6 +294,19 @@ nav a {
   border-radius: var(--radius);
   align-items: center;
   min-width: max-content;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.panel-arrow {
+  margin-left: auto;
+  color: var(--fg4);
+  opacity: 0.5;
+  font-size: 1.2em;
+}
+
+nav.groups {
+  background-color: var(--bg_h);
 }
 
 nav.groups a {
@@ -325,7 +342,7 @@ nav.groups a .date {
   font-size: 0.75em;
   font-weight: bold;
   color: var(--fg2);
-  margin: 0 0 0.8rem 0;
+  margin: 0.8rem 0;
 }
 
 .section-desc {
@@ -401,7 +418,7 @@ a.page-card .desc {
 }
 
 a.page-card:hover {
-  background: var(--bg_s);
+  background: var(--bg2);
 }
 
 nav a img {
@@ -410,15 +427,16 @@ nav a img {
 
 nav a img.external {
   margin-left: auto;
-  width: 1em;
+  width: 0.7em;
+  opacity: 0.4;
 }
 
 nav a:hover {
-  background: var(--bg_s);
+  background: var(--bg1);
 }
 
 nav a.active {
-  background: var(--bg_h);
+  background: var(--bg1);
 }
 
 .app {
