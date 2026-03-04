@@ -552,53 +552,80 @@ hr {
 }
 
 #skills {
-  font-size: 3em;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-#skills > span {
+.skill-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skill-group-label {
+  font-size: 0.7em;
+  font-weight: 600;
+  color: var(--fg4);
+  letter-spacing: 0.03em;
+}
+
+.skill-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.25em 0.7em;
+  border-radius: var(--radius-lg);
+  background: var(--bg_s);
+  border: 1px solid var(--bg2);
+  font-size: 0.85em;
+  color: var(--fg1);
+  text-decoration: none;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
+  cursor: default;
+}
+
+a.skill-chip {
+  cursor: pointer;
+}
+
+.skill-chip[style*="--glow"] {
+  filter: drop-shadow(0 0 0.15em rgba(var(--glow), 0.5));
+}
+
+a.skill-chip:hover {
+  text-decoration: none;
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg_s));
+  transform: translateY(-1px);
+}
+
+a.skill-chip:visited {
+  color: var(--fg1);
+}
+
+.skill-chip-icon {
+  width: 1.1em;
+  height: 1.1em;
+  font-size: 1.1em;
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-#skills a {
-  width: 1em;
-  height: 1em;
+img.skill-chip-icon {
+  object-fit: contain;
 }
 
-#skills a:hover {
-  text-decoration: none;
-}
-
-.icon {
-  font-size: 0.8em;
-}
-
-.tech {
-  padding: 0.1em;
-  transition: transform 0.2s;
-}
-
-.tech-smaller {
-  font-size: 0.8em;
-}
-
-.tech:hover {
-  transform: scale(120%);
-}
-
-.glow-go {
-  filter: drop-shadow(0 0 10px rgba(0, 173, 216, 0.2));
-}
-
-.glow-zig {
-  filter: drop-shadow(0 0 10px rgba(247, 164, 29, 0.2));
-}
-
-.glow-helix {
-  filter: drop-shadow(0 0 10px rgba(112, 107, 200, 0.2));
+.skill-chip-name {
+  white-space: nowrap;
 }
 
 
@@ -617,6 +644,10 @@ blockquote p {
 }
 
 @media only screen and (max-width: 1024px) {
+  #skills {
+    flex-direction: column;
+  }
+
   main {
     font-size: calc(min(1rem, max(0.5rem, 2.5vw)));
   }

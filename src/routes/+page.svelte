@@ -1,3 +1,71 @@
+<script>
+	const skillGroups = [
+		{
+			label: 'Languages',
+			skills: [
+				{ name: 'Go', url: 'https://go.dev/', icon: 'devicon-go-original-wordmark', type: 'devicon', accent: '#00ADD8', glow: '0, 173, 216' },
+				{ name: 'Zig', url: 'https://ziglang.org/', icon: '/images/zig-mark.svg', type: 'svg', accent: '#F7A41D', glow: '247, 164, 29' },
+				{ name: 'C', url: 'https://en.cppreference.com/w/c', icon: 'devicon-c-plain', type: 'devicon', accent: '#A8B9CC' },
+				{ name: 'Swift', url: 'https://www.swift.org', icon: 'devicon-swift-plain', type: 'devicon', accent: '#F05138' },
+			]
+		},
+		{
+			label: 'Scripting',
+			skills: [
+				{ name: 'Lua', url: 'https://www.lua.org', icon: 'devicon-lua-plain', type: 'devicon', accent: '#000080', glow: '100, 100, 220' },
+				{ name: 'Python', url: 'https://www.python.org', icon: 'devicon-python-plain', type: 'devicon', accent: '#3776AB' },
+				{ name: 'Bash', url: 'https://www.gnu.org/software/bash/', icon: 'devicon-bash-plain', type: 'devicon', accent: '#4EAA25', noColor: true },
+			]
+		},
+		{
+			label: 'Frameworks & Libraries',
+			skills: [
+				{ name: 'Svelte', url: 'https://svelte.dev', icon: 'devicon-svelte-plain', type: 'devicon', accent: '#FF3E00', glow: '255, 62, 0' },
+				{ name: 'React', url: 'https://react.dev', icon: 'devicon-react-plain', type: 'devicon', accent: '#61DAFB' },
+			]
+		},
+		{
+			label: 'Databases',
+			skills: [
+				{ name: 'PostgreSQL', url: 'https://www.postgresql.org', icon: 'devicon-postgresql-plain', type: 'devicon', accent: '#4169E1', glow: '65, 105, 225' },
+				{ name: 'SQLite', url: 'https://www.sqlite.org/', icon: 'devicon-sqlite-plain', type: 'devicon', accent: '#003B57', glow: '15, 128, 204' },
+			]
+		},
+		{
+			label: 'APIs',
+			skills: [
+				{ name: 'OpenGL', url: 'https://www.opengl.org', icon: 'devicon-opengl-plain', type: 'devicon', accent: '#5586A4' },
+				{ name: 'WebGL', url: 'https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API', icon: '/images/webgl-logo.svg', type: 'svg', accent: '#990000' },
+				{ name: 'WebGPU', url: 'https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API', icon: '/images/webgpu-logo.svg', type: 'svg', accent: '#0093FF' },
+			]
+		},
+		{
+			label: 'Editors & IDEs',
+			skills: [
+				{ name: 'Helix', url: 'https://helix-editor.com/', icon: '/images/helix-logo.svg', type: 'svg', accent: '#706BC8', glow: '112, 107, 200' },
+				{ name: 'JetBrains', url: 'https://www.jetbrains.com', icon: 'devicon-jetbrains-plain', type: 'devicon', accent: '#FFDB00' },
+				{ name: 'VSCode', url: 'https://code.visualstudio.com', icon: 'devicon-vscode-plain', type: 'devicon', accent: '#007ACC' },
+			]
+		},
+		{
+			label: 'Runtimes & Tools',
+			skills: [
+				{ name: 'Bun', url: 'https://bun.sh', icon: '/images/bun-logo.svg', type: 'svg', accent: '#FBF0DF', glow: '251, 240, 223' },
+				{ name: 'Mise', url: 'https://mise.jdx.dev/', icon: '/images/mise-logo.svg', type: 'svg', accent: '#7C4DFF', glow: '124, 77, 255' },
+				{ name: 'Git', url: 'https://git-scm.com', icon: 'devicon-git-plain', type: 'devicon', accent: '#F05032' },
+			]
+		},
+		{
+			label: 'Platforms',
+			skills: [
+				{ name: 'Apple', accent: '#DDDDDD', icon: 'devicon-apple-plain', type: 'devicon', glow: '221, 221, 221' },
+				{ name: 'Linux', accent: '#FCC624', icon: 'devicon-linux-plain', type: 'devicon' },
+				{ name: 'Windows', accent: '#0078D6', icon: 'devicon-windows8-plain', type: 'devicon' },
+			]
+		},
+	];
+</script>
+
 <svelte:head>
 	<title>Medieval Software - Home</title>
 	<meta property="og:title" content="Medieval Software">
@@ -9,335 +77,67 @@
 </svelte:head>
 
 <article id="home">
-	<h1>About</h1>
-	<div class="row gap-1">
-		<div class="col-1-10 gutter">
-			<p>Site</p>
-		</div>
-		<div class="col-9-10 content">
+	<h1>Welcome to Medieval Software!</h1>
+	<div id="intro">
+		<div class="intro-about">
+			<h2>About</h2>
 			<p>
-				Medieval Software was born out of my love for software development and the medieval times.
-				At the moment it isn't much of a company, it's more of a self hosted blog for my
-				thoughts and endeavors.
+				I'm Dane, a programmer and hobbyist since forever, professional since 2019.
+				This is where I put things when I want to show them off or talk about them.
 			</p>
-		</div>
-	</div>
-	<div class="row gap-1">
-		<div class="col-1-10 gutter">
-			<p>Me</p>
-		</div>
-		<div class="col-9-10 content">
-			<p>I'm Dane, some sort of a programmer.</p>
 			<p>
-				I love reverse engineering old stuff, particularly RuneScape from the early-mid 2000s. The
-				cpu rendering in particular is what got me into it, then I fell into a rabbit hole of audio
-				synthesis and custom network protocols atop TCP.
+				I love reverse engineering old games, particularly RuneScape from the early-mid 2000s.
+				Software rasterization got me hooked, then I fell into audio synthesis and custom network protocols.
+				My favorite childhood game is Dungeon Siege 1.
 			</p>
+			<div class="ai-stance">
+				<h2>Stance on AI</h2>
+				<p>
+					I believe it's as useful as it is destructive. I use it incrementally, guiding it one
+					step at a time. I don't "vibe code" projects I care about, but I will "vibe code"
+					prototypes. The cost of the time saved depends on the application and audience.
+				</p>
+			</div>
 		</div>
-	</div>
-	<div class="row gap-1">
-		<div class="col-1-10 gutter">
-			<p>Skills</p>
-		</div>
-		<!-- svelte-ignore a11y-missing-content -->
-		<!-- svelte-ignore a11y-missing-attribute -->
-		<div class="col-9-10 content">
-			<p>
-				My skills vary widely from backend to frontend, ranging from fiddling with bits over custom
-				internet protocols - to creating sleek and responsive websites. I've been a hobbyist all my
-				life and a professional since 2019.
-			</p>
-			<div id="skills" class="row">
-				<span data-tooltip="Language: Go">
-					<a
-						href="https://go.dev/"
-						target="_blank"
-						class="tech glow-go devicon-go-original-wordmark colored"
-					/>
-				</span>
-
-				<span data-tooltip="Language: Zig">
-					<a
-						href="https://ziglang.org/"
-						target="_blank"
-						class="tech glow-zig"
-					>
-						<img src="/images/zig-mark.svg" alt="Zig" />
-					</a>
-				</span>
-
-				<span data-tooltip="Language: C">
-					<a
-						href="https://en.cppreference.com/w/c"
-						target="_blank"
-						class="tech icon devicon-c-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Language: C#">
-					<a
-						href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/"
-						target="_blank"
-						class="tech icon devicon-csharp-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Language: Java">
-					<a
-						href="https://www.oracle.com/java/technologies/"
-						target="_blank"
-						class="tech icon devicon-java-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Language: HTML">
-					<a
-						href="https://developer.mozilla.org/en-US/docs/Web/HTML"
-						target="_blank"
-						class="tech icon devicon-html5-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Language: CSS">
-					<a
-						href="https://developer.mozilla.org/en-US/docs/Web/CSS"
-						target="_blank"
-						class="tech icon devicon-css3-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="CSS Extension: Sass">
-					<a
-						href="https://sass-lang.com"
-						target="_blank"
-						class="tech icon devicon-sass-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Language: JavaScript">
-					<a
-						href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference"
-						target="_blank"
-						class="tech icon devicon-javascript-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Language: TypeScript">
-					<a
-						href="https://www.typescriptlang.org/"
-						target="_blank"
-						class="tech icon devicon-typescript-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Language: Python">
-					<a
-						href="https://www.python.org"
-						target="_blank"
-						class="tech icon devicon-python-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Language: Lua">
-					<a
-						href="https://www.lua.org"
-						target="_blank"
-						class="tech icon devicon-lua-plain colored"
-						style="color:#33A"
-					/>
-				</span>
-
-				<hr />
-
-				<span data-tooltip="Web Framework: Svelte">
-					<a
-						href="https://svelte.dev"
-						target="_blank"
-						class="tech icon devicon-svelte-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Web Framework: Angular">
-					<a
-						href="https://angular.io"
-						target="_blank"
-						class="tech icon devicon-angularjs-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Web Manager: WordPress">
-					<a
-						href="https://wordpress.com"
-						target="_blank"
-						class="tech icon devicon-wordpress-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Web Library: React">
-					<a
-						href="https://react.dev"
-						target="_blank"
-						class="tech icon devicon-react-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Web Library: JQuery">
-					<a
-						href="https://jquery.com"
-						target="_blank"
-						class="tech icon devicon-jquery-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Backend Framework: Spring">
-					<a
-						href="https://spring.io"
-						target="_blank"
-						class="tech icon devicon-spring-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Specification: OpenGL">
-					<a
-						href="https://www.opengl.org"
-						target="_blank"
-						class="tech icon devicon-opengl-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="App Library: SDL">
-					<a
-						href="https://www.libsdl.org"
-						target="_blank"
-						class="tech icon devicon-sdl-plain colored"
-					/>
-				</span>
-
-				<hr />
-
-				<span data-tooltip="Database: Microsoft SQL Server">
-					<a
-						href="https://learn.microsoft.com/en-us/sql/sql-server/what-s-new-in-sql-server-2022"
-						target="_blank"
-						class="tech icon devicon-microsoftsqlserver-plain colored"
-					/>
-				</span>
-				
-				<span data-tooltip="Database: MySQL">
-					<a
-						href="https://www.mysql.com"
-						target="_blank"
-						class="tech icon devicon-mysql-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Database: PostgreSQL">
-					<a
-						href="https://www.postgresql.org"
-						target="_blank"
-						class="tech icon devicon-postgresql-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Database: SQLite">
-					<a
-						href="https://www.sqlite.org/"
-						target="_blank"
-						class="tech icon devicon-sqlite-plain colored"
-					/>
-				</span>
-
-				<hr />
-
-				<span data-tooltip="Text Editor: Helix">
-					<a
-						href="https://helix-editor.com/"
-						target="_blank"
-						class="tech glow-helix"
-					>
-						<img src="/images/helix-logo.svg" alt="Helix" />
-					</a>
-				</span>
-
-				<span data-tooltip="Text Editor: Vim">
-					<a
-						href="https://www.vim.org"
-						target="_blank"
-						class="tech icon devicon-vim-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Text Editor: VSCode">
-					<a
-						href="https://code.visualstudio.com"
-						target="_blank"
-						class="tech icon devicon-vscode-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="IDE: JetBrains Products">
-					<a
-						href="https://www.jetbrains.com"
-						target="_blank"
-						class="tech icon devicon-jetbrains-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="IDE: Visual Studio">
-					<a
-						href="https://visualstudio.microsoft.com"
-						target="_blank"
-						class="tech icon devicon-visualstudio-plain colored"
-					/>
-				</span>
-
-				<hr />
-
-				<span data-tooltip="Runtime: NodeJS">
-					<a
-						href="https://nodejs.org/"
-						target="_blank"
-						class="tech icon devicon-nodejs-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="Source Control: Git">
-					<a
-						href="https://git-scm.com"
-						target="_blank"
-						class="tech icon devicon-git-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="DevOps: GitHub">
-					<a
-						href="https://github.com"
-						target="_blank"
-						class="tech icon devicon-github-plain colored"
-					/>
-				</span>
-
-				<span data-tooltip="DevOps: GitLab">
-					<a
-						href="https://gitlab.com"
-						target="_blank"
-						class="tech icon devicon-gitlab-plain colored"
-					/>
-				</span>
-
-				<hr />
-
-				<span data-tooltip="Environment: Apple">
-					<a target="_blank" class="tech icon devicon-apple-plain colored" style="color:#ddd" />
-				</span>
-
-				<span data-tooltip="Environment: Linux">
-					<span class="tech icon devicon-linux-plain colored" style="color:#111" />
-				</span>
-
-				<span data-tooltip="Environment: Windows">
-					<span class="tech icon devicon-windows8-plain colored" />
-				</span>
+		<div class="intro-skills">
+			<h2>Skills <span class="skills-hint">biases glowing</span></h2>
+			<div id="skills">
+				{#each skillGroups as group}
+					<div class="skill-group">
+						<h4 class="skill-group-label">{group.label}</h4>
+						<div class="skill-chips">
+							{#each group.skills as skill}
+																{#if skill.url}
+									<a
+										class="skill-chip"
+										href={skill.url}
+										target="_blank"
+										style="--accent: {skill.accent};{skill.glow ? ` --glow: ${skill.glow}` : ''}"
+									>
+										{#if skill.type === 'svg'}
+											<img class="skill-chip-icon" src={skill.icon} alt={skill.name} />
+										{:else if skill.icon}
+											<i class="skill-chip-icon {skill.icon}{skill.noColor ? '' : ' colored'}"></i>
+										{/if}
+										<span class="skill-chip-name">{skill.name}</span>
+									</a>
+								{:else}
+									<span
+										class="skill-chip"
+										style="--accent: {skill.accent};{skill.glow ? ` --glow: ${skill.glow}` : ''}"
+									>
+										{#if skill.type === 'svg'}
+											<img class="skill-chip-icon" src={skill.icon} alt={skill.name} />
+										{:else if skill.icon}
+											<i class="skill-chip-icon {skill.icon}{skill.noColor ? '' : ' colored'}"></i>
+										{/if}
+										<span class="skill-chip-name">{skill.name}</span>
+									</span>
+								{/if}
+							{/each}
+						</div>
+					</div>
+				{/each}
 			</div>
 		</div>
 	</div>
@@ -351,16 +151,55 @@
 		margin: 0;
 	}
 
-	.gutter {
-		text-align: right;
+	#intro {
+		display: flex;
+		gap: 2em;
+	}
+
+	#intro h2 {
+		font-size: 1em;
+		color: var(--fg4);
+		padding-bottom: 0.3em;
+		margin-bottom: 0.5em;
+		border-bottom: 1px solid var(--bg2);
+	}
+
+	.intro-about {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75em;
+		text-align: justify;
+	}
+
+	.intro-skills {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75em;
+	}
+
+
+	.ai-stance {
+		font-size: 0.8em;
+		color: var(--fg4);
+		padding-top: 0.5em;
+	}
+
+	.ai-stance h2 {
 		color: var(--fg4);
 	}
 
-	.content {
-		gap: 1em;
+	.skills-hint {
+		font-size: 0.6em;
+		font-weight: normal;
+		color: var(--fg4);
+		opacity: 0.8;
 	}
 
-	.content > *:last-child {
-		margin-bottom: 1rem;
+	@media only screen and (max-width: 1024px) {
+		#intro {
+			flex-direction: column;
+		}
 	}
 </style>
