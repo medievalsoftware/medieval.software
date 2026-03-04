@@ -597,6 +597,10 @@ hr {
   filter: drop-shadow(0 0 10px rgba(247, 164, 29, 0.2));
 }
 
+.glow-helix {
+  filter: drop-shadow(0 0 10px rgba(112, 107, 200, 0.2));
+}
+
 
 
 blockquote {
@@ -665,7 +669,8 @@ blockquote p {
   #mobile-bar a {
     display: flex;
     flex-direction: column;
-    width: 4em;
+    min-width: 0;
+    flex: 1 1 0;
     height: 4rem;
     justify-content: space-evenly;
     align-content: center;
@@ -675,8 +680,8 @@ blockquote p {
     border-radius: var(--radius-sm);
     border-left: 2px solid var(--bg_s);
     border-right: 2px solid var(--bg_s);
-    padding-left: 1em;
-    padding-right: 1em;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
   }
 
   #mobile-bar a.active {

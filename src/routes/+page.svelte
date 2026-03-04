@@ -249,6 +249,16 @@
 
 				<hr />
 
+				<span data-tooltip="Text Editor: Helix">
+					<a
+						href="https://helix-editor.com/"
+						target="_blank"
+						class="tech glow-helix"
+					>
+						<img src="/images/helix-logo.svg" alt="Helix" />
+					</a>
+				</span>
+
 				<span data-tooltip="Text Editor: Vim">
 					<a
 						href="https://www.vim.org"
