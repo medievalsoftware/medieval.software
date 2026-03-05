@@ -615,7 +615,7 @@ a.skill-chip {
 }
 
 .skill-chip[style*="--glow"] {
-  filter: drop-shadow(0 0 0.15em rgba(var(--glow), 0.5));
+  filter: drop-shadow(0 0 0.3em rgba(var(--glow), 0.5));
 }
 
 a.skill-chip:hover {
