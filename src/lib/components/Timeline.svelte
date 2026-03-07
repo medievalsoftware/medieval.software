@@ -214,29 +214,48 @@
 				p.strokeWeight(2);
 				p.line(margin.left, timelineY, p.width - margin.right, timelineY);
 
-				// Week ticks
-				p.stroke(...theme.bg2);
-				p.strokeWeight(1);
-				for (let i = 0; i < totalMonths; i++) {
-					for (let w = 1; w < 4; w++) {
-						let x = monthToX(i + w / 4);
-						p.line(x, timelineY - 2, x, timelineY + 2);
-					}
-				}
-
 				// Month ticks and labels
 				p.textSize(10);
 				let monthW = (p.width - margin.left - margin.right) / totalMonths;
+
+				// Week ticks (hide when months are too narrow)
+				if (monthW > 20) {
+					p.stroke(...theme.bg2);
+					p.strokeWeight(1);
+					for (let i = 0; i < totalMonths; i++) {
+						for (let w = 1; w < 4; w++) {
+							let x = monthToX(i + w / 4);
+							p.line(x, timelineY - 2, x, timelineY + 2);
+						}
+					}
+				}
 				let labelW = p.textWidth('Mar') + 6;
 				let skip = Math.max(1, Math.ceil(labelW / monthW));
 
 				for (let i = 0; i <= totalMonths; i++) {
 					let x = monthToX(i);
-					p.stroke(...theme.bg3);
-					p.strokeWeight(1);
-					p.line(x, timelineY - 5, x, timelineY + 5);
+					let mi = i < totalMonths ? (startMonth + i) % 12 : -1;
+					let isYearBoundary = mi === 0 && i > 0;
+
+					// Year boundary: taller tick + faint line through span area
+					if (isYearBoundary) {
+						p.stroke(...theme.bg3);
+						p.strokeWeight(2);
+						p.line(x, timelineY - 8, x, timelineY + 8);
+
+						let spanBottom = timelineY + 36 + spanData.length * (spanH + spanGap);
+						p.stroke(...theme.bg2, 80);
+						p.strokeWeight(1);
+						p.drawingContext.setLineDash([2, 4]);
+						p.line(x, timelineY + 8, x, spanBottom);
+						p.drawingContext.setLineDash([]);
+					} else {
+						p.stroke(...theme.bg3);
+						p.strokeWeight(1);
+						p.line(x, timelineY - 5, x, timelineY + 5);
+					}
+
 					if (i < totalMonths) {
-						let mi = (startMonth + i) % 12;
 						let yr = startYear + Math.floor((startMonth + i) / 12);
 						let isLast = i === totalMonths - 1;
 						let showLabel = isLast || (i % skip === 0);
@@ -316,6 +335,14 @@
 					let y = spanStartY + i * (spanH + spanGap);
 
 					let hovered = hoveredSpan === i;
+
+					// Ongoing span: faded continuation rect to the right edge
+					if (s.end === 'today') {
+						p.noStroke();
+						p.fill(...s.color, hovered ? 60 : 30);
+						p.rect(x2, y, p.width - margin.right - x2, spanH, 0, 2, 2, 0);
+					}
+
 					p.noStroke();
 					p.fill(...s.color, hovered ? 220 : 120);
 					p.rect(x1, y, x2 - x1, spanH, 2);
