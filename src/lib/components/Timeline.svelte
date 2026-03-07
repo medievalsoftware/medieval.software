@@ -1,9 +1,9 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 
-	/** @type {{ date: string, label: string, color: number[], detail?: string }[]} */
+	/** @type {{ date: string, label: string, color: number[], detail?: string | string[], link?: string }[]} */
 	export let events = [];
-	/** @type {{ start: string, end: string, label: string, color: number[], detail?: string }[]} */
+	/** @type {{ start: string, end: string, label: string, color: number[], detail?: string | string[], group?: string }[]} */
 	export let spans = [];
 	/** @type {string} */
 	export let title = '';
@@ -79,11 +79,30 @@
 			const margin = { left: 40, right: 20 };
 			const topPad = 16;
 			const boxH = 24;
-			const boxPad = 8;
+			const boxPad = 6;
 			const rowH = boxH + 12;
 			const spanH = 20;
 			const spanGap = 4;
 			const bottomPad = 12;
+			const iconSize = 8;
+			const iconGap = 4;
+			const iconHalf = iconSize / 2;
+
+			// Compute span row assignments based on groups
+			const spanRowMap = [];
+			let totalSpanRows = 0;
+			const groupRows = {};
+			for (let i = 0; i < spanData.length; i++) {
+				let s = spanData[i];
+				if (s.group && s.group in groupRows) {
+					spanRowMap[i] = groupRows[s.group];
+				} else {
+					spanRowMap[i] = totalSpanRows;
+					if (s.group) groupRows[s.group] = totalSpanRows;
+					totalSpanRows++;
+				}
+			}
+			if (totalSpanRows === 0) totalSpanRows = 1;
 
 			let pinnedEvent = -1;
 			let pinnedSpan = -1;
@@ -121,7 +140,7 @@
 			}
 
 			function computeHeight() {
-				return titleH + topPad + eventRows * rowH + 44 + 36 + spanData.length * (spanH + spanGap) + bottomPad;
+				return titleH + topPad + eventRows * rowH + 44 + 36 + totalSpanRows * (spanH + spanGap) + bottomPad;
 			}
 
 			function layoutEvents() {
@@ -136,7 +155,8 @@
 				eventLayout = keyEvents.map((e) => {
 					let x = monthToX(dateToPos(e.date));
 					let tw = p.textWidth(e.label);
-					let boxW = tw + boxPad * 2;
+					let hasIcon = e.link || (e.detail && (Array.isArray(e.detail) ? e.detail.length > 0 : e.detail.length > 0));
+					let boxW = boxPad + tw + (hasIcon ? iconGap + iconSize : 0) + boxPad;
 					let boxX = x - boxW / 2;
 
 					// Skip events fully off-screen (beyond the next non-visible one)
@@ -221,8 +241,14 @@
 
 			p.mouseReleased = () => {
 				if (isDragging && !dragMoved) {
-					// It was a click, not a drag — handle pin toggle
+					// It was a click, not a drag
 					if (hoveredEvent >= 0) {
+						let e = keyEvents[hoveredEvent];
+						if (e.link) {
+							window.location.href = e.link;
+							isDragging = false;
+							return;
+						}
 						if (pinnedEvent === hoveredEvent) {
 							pinnedEvent = -1;
 						} else {
@@ -252,17 +278,29 @@
 				if (p.mouseX < margin.left || p.mouseX > p.width - margin.right) return;
 				if (p.mouseY < 0 || p.mouseY > p.height) return;
 
-				zoomAnchorFrac = (p.mouseX - margin.left) / (p.width - margin.left - margin.right);
-				let monthUnderCursor = targetViewStart + zoomAnchorFrac * targetViewMonths;
+				let dx = event.deltaX || 0;
+				let dy = event.deltaY || 0;
 
-				// Scale proportionally to delta for smooth trackpad feel
-				let zoomFactor = 1 + event.delta * 0.003;
-				targetViewMonths *= zoomFactor;
-				targetViewMonths = Math.max(minViewMonths, Math.min(totalMonths, targetViewMonths));
+				// Horizontal: pan
+				if (Math.abs(dx) > 0) {
+					let monthsPerPx = targetViewMonths / (p.width - margin.left - margin.right);
+					targetViewStart += dx * monthsPerPx;
+					targetViewStart = Math.max(0, Math.min(totalMonths - targetViewMonths, targetViewStart));
+				}
 
-				// Anchor zoom to cursor position
-				targetViewStart = monthUnderCursor - zoomAnchorFrac * targetViewMonths;
-				targetViewStart = Math.max(0, Math.min(totalMonths - targetViewMonths, targetViewStart));
+				// Vertical: zoom
+				if (Math.abs(dy) > 0) {
+					zoomAnchorFrac = (p.mouseX - margin.left) / (p.width - margin.left - margin.right);
+					let monthUnderCursor = targetViewStart + zoomAnchorFrac * targetViewMonths;
+
+					let zoomFactor = 1 + dy * 0.003;
+					targetViewMonths *= zoomFactor;
+					targetViewMonths = Math.max(minViewMonths, Math.min(totalMonths, targetViewMonths));
+
+					targetViewStart = monthUnderCursor - zoomAnchorFrac * targetViewMonths;
+					targetViewStart = Math.max(0, Math.min(totalMonths - targetViewMonths, targetViewStart));
+				}
+
 				return false; // prevent page scroll
 			};
 
@@ -339,7 +377,7 @@
 						p.strokeWeight(2);
 						p.line(x, timelineY - 8, x, timelineY + 8);
 
-						let spanBottom = timelineY + 36 + spanData.length * (spanH + spanGap);
+						let spanBottom = timelineY + 36 + totalSpanRows * (spanH + spanGap);
 						p.stroke(...theme.bg2, 80);
 						p.strokeWeight(1);
 						p.drawingContext.setLineDash([2, 4]);
@@ -374,7 +412,7 @@
 				// Today marker (line + label drawn early; diamond drawn later on top)
 				if (showToday) {
 					let tx = monthToX(todayPos);
-					let spanBottom = timelineY + 36 + spanData.length * (spanH + spanGap);
+					let spanBottom = timelineY + 36 + totalSpanRows * (spanH + spanGap);
 
 					// Dashed line spanning full height
 					p.stroke(...theme.orange, 100);
@@ -395,14 +433,14 @@
 
 				// Spans below timeline
 				let spanStartY = timelineY + 36;
-				let spanBottomY = spanStartY + spanData.length * (spanH + spanGap);
+				let spanBottomY = spanStartY + totalSpanRows * (spanH + spanGap);
 
 				// Hit-test spans first so guide lines can react
 				for (let i = 0; i < spanData.length; i++) {
 					let s = spanData[i];
 					let x1 = monthToX(dateToPos(s.start));
 					let x2 = monthToX(dateToPos(s.end));
-					let y = spanStartY + i * (spanH + spanGap);
+					let y = spanStartY + spanRowMap[i] * (spanH + spanGap);
 					if (mx >= x1 && mx <= x2 && my >= y && my <= y + spanH) {
 						hoveredSpan = i;
 					}
@@ -428,7 +466,7 @@
 					let s = spanData[i];
 					let x1 = monthToX(dateToPos(s.start));
 					let x2 = monthToX(dateToPos(s.end));
-					let y = spanStartY + i * (spanH + spanGap);
+					let y = spanStartY + spanRowMap[i] * (spanH + spanGap);
 
 					let hovered = hoveredSpan === i;
 
@@ -500,8 +538,64 @@
 
 						p.noStroke();
 						p.fill(...(hovered ? theme.fg : theme.fg2));
-						p.textAlign(p.CENTER, p.CENTER);
-						p.text(e.label, l.boxX + l.boxW / 2, l.boxY + l.boxH / 2);
+						p.textAlign(p.LEFT, p.CENTER);
+						let hasIcon = e.link || (e.detail && (Array.isArray(e.detail) ? e.detail.length > 0 : e.detail.length > 0));
+						p.text(e.label, l.boxX + boxPad, l.boxY + l.boxH / 2 + 1);
+
+						// Icon: link or info
+						if (hasIcon) {
+							let tw2 = p.textWidth(e.label);
+							let ix = l.boxX + boxPad + tw2 + iconGap + iconHalf;
+							let iy = l.boxY + l.boxH / 2;
+
+							if (e.link) {
+								// Internal link icon: box with inward arrow
+								let ctx = p.drawingContext;
+								let c = hovered ? theme.fg : theme.fg4;
+								let s = iconHalf;
+								ctx.save();
+								ctx.translate(ix, iy);
+								ctx.strokeStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+								ctx.lineWidth = 1;
+								ctx.lineCap = 'round';
+								ctx.lineJoin = 'round';
+								// Box (open top-right corner)
+								ctx.beginPath();
+								ctx.moveTo(0, -s);
+								ctx.lineTo(-s, -s);
+								ctx.lineTo(-s, s);
+								ctx.lineTo(s, s);
+								ctx.lineTo(s, 0);
+								ctx.stroke();
+								// Arrow from top-right pointing to center
+								ctx.beginPath();
+								ctx.moveTo(s, -s);
+								ctx.lineTo(-1, 1);
+								ctx.stroke();
+								// Arrowhead
+								ctx.beginPath();
+								ctx.moveTo(-1, -2.5);
+								ctx.lineTo(-1, 1);
+								ctx.lineTo(2.5, 1);
+								ctx.stroke();
+								ctx.restore();
+							} else if (!e.link) {
+								// Info icon: circle with 'i'
+								let c = hovered ? theme.fg : theme.fg4;
+								p.noFill();
+								p.stroke(...c);
+								p.strokeWeight(1);
+								p.circle(ix, iy, iconSize);
+								p.noStroke();
+								p.fill(...c);
+								p.textSize(7);
+								p.textStyle(p.BOLD);
+								p.textAlign(p.CENTER, p.CENTER);
+								p.text('i', ix, iy + 1);
+								p.textStyle(p.NORMAL);
+							}
+							p.textSize(11);
+						}
 					}
 				}
 
@@ -531,15 +625,21 @@
 				let showEvent = pinnedEvent >= 0 ? pinnedEvent : hoveredEvent;
 				let showSpan = showEvent < 0 ? (pinnedSpan >= 0 ? pinnedSpan : hoveredSpan) : -1;
 
+				function detailLines(detail) {
+					if (!detail) return [];
+					if (Array.isArray(detail)) return detail;
+					return detail.split('\n');
+				}
+
 				if (showEvent >= 0) {
 					let e = keyEvents[showEvent];
 					tipLines.push(formatDate(e.date));
-					if (e.detail) tipLines.push(e.detail);
+					tipLines.push(...detailLines(e.detail));
 					if (pinnedEvent >= 0) { tipAnchorX = pinnedX; tipAnchorY = pinnedY; }
 				} else if (showSpan >= 0) {
 					let s = spanData[showSpan];
 					tipLines.push(formatDate(s.start) + '  —  ' + formatDate(s.end));
-					if (s.detail) tipLines.push(s.detail);
+					tipLines.push(...detailLines(s.detail));
 					if (pinnedSpan >= 0) { tipAnchorX = pinnedX; tipAnchorY = pinnedY; }
 				}
 
