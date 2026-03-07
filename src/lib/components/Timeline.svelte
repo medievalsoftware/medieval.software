@@ -132,6 +132,7 @@
 			let timelineY;
 			let eventRows = 1;
 			let hoveredEvent = -1;
+			let hoveredViaBox = false;
 			let hoveredSpan = -1;
 			let eventLayout = [];
 
@@ -238,17 +239,23 @@
 				}
 			};
 
-			p.mousePressed = () => {
-				if (p.mouseX < 0 || p.mouseX > p.width || p.mouseY < 0 || p.mouseY > p.height) return;
+			// --- Input handling (mouse + touch) ---
+
+			function pointerInBounds(x, y) {
+				return x >= 0 && x <= p.width && y >= 0 && y <= p.height;
+			}
+
+			function handlePressAt(x, y) {
+				if (!pointerInBounds(x, y)) return;
 				isDragging = true;
-				dragStartX = p.mouseX;
+				dragStartX = x;
 				dragStartView = viewStart;
 				dragMoved = false;
-			};
+			}
 
-			p.mouseDragged = () => {
+			function handleDragAt(x) {
 				if (!isDragging) return;
-				let dx = p.mouseX - dragStartX;
+				let dx = x - dragStartX;
 				if (Math.abs(dx) > dragThreshold) dragMoved = true;
 				if (dragMoved) {
 					let monthsPerPx = viewMonths / (p.width - margin.left - margin.right);
@@ -258,14 +265,17 @@
 					targetViewStart = viewStart;
 					layoutEvents();
 				}
-			};
+			}
 
-			p.mouseReleased = () => {
+			function handleReleaseAt(x, y) {
 				if (isDragging && !dragMoved) {
-					// It was a click, not a drag
+					// Update mouseX/Y for hit-testing on touch
+					p._setProperty('mouseX', x);
+					p._setProperty('mouseY', y);
+
 					if (hoveredEvent >= 0) {
 						let e = keyEvents[hoveredEvent];
-						if (e.link) {
+						if (e.link && hoveredViaBox) {
 							window.location.href = e.link;
 							isDragging = false;
 							return;
@@ -275,8 +285,8 @@
 						} else {
 							pinnedEvent = hoveredEvent;
 							pinnedSpan = -1;
-							pinnedX = p.mouseX;
-							pinnedY = p.mouseY;
+							pinnedX = x;
+							pinnedY = y;
 						}
 					} else if (hoveredSpan >= 0) {
 						if (pinnedSpan === hoveredSpan) {
@@ -284,8 +294,8 @@
 						} else {
 							pinnedSpan = hoveredSpan;
 							pinnedEvent = -1;
-							pinnedX = p.mouseX;
-							pinnedY = p.mouseY;
+							pinnedX = x;
+							pinnedY = y;
 						}
 					} else {
 						pinnedEvent = -1;
@@ -293,6 +303,81 @@
 					}
 				}
 				isDragging = false;
+			}
+
+			// Mouse events
+			p.mousePressed = () => handlePressAt(p.mouseX, p.mouseY);
+			p.mouseDragged = () => handleDragAt(p.mouseX);
+			p.mouseReleased = () => handleReleaseAt(p.mouseX, p.mouseY);
+
+			// Touch events
+			let pinchStartDist = 0;
+			let pinchStartMonths = 0;
+			let pinchStartViewStart = 0;
+			let pinchAnchorFrac = 0.5;
+			let touchStartPos = null;
+			let touchLocked = null; // null = undecided, 'pan' = horizontal, 'scroll' = vertical
+
+			p.touchStarted = () => {
+				if (p.touches.length === 2) {
+					let t = p.touches;
+					pinchStartDist = Math.hypot(t[0].x - t[1].x, t[0].y - t[1].y);
+					pinchStartMonths = targetViewMonths;
+					pinchStartViewStart = targetViewStart;
+					let midX = (t[0].x + t[1].x) / 2;
+					pinchAnchorFrac = (midX - margin.left) / (p.width - margin.left - margin.right);
+					isDragging = false;
+					touchLocked = 'pan';
+					return false;
+				}
+				if (p.touches.length === 1) {
+					let t = p.touches[0];
+					touchStartPos = { x: t.x, y: t.y };
+					touchLocked = null;
+					handlePressAt(t.x, t.y);
+				}
+			};
+
+			p.touchMoved = () => {
+				if (p.touches.length === 2) {
+					let t = p.touches;
+					let dist = Math.hypot(t[0].x - t[1].x, t[0].y - t[1].y);
+					let scale = pinchStartDist / dist;
+					let monthAnchor = pinchStartViewStart + pinchAnchorFrac * pinchStartMonths;
+
+					targetViewMonths = pinchStartMonths * scale;
+					targetViewMonths = Math.max(minViewMonths, Math.min(totalMonths, targetViewMonths));
+					targetViewStart = monthAnchor - pinchAnchorFrac * targetViewMonths;
+					targetViewStart = Math.max(0, Math.min(totalMonths - targetViewMonths, targetViewStart));
+					return false;
+				}
+				if (p.touches.length === 1 && touchStartPos) {
+					let t = p.touches[0];
+					// Decide direction on first significant movement
+					if (touchLocked === null) {
+						let dx = Math.abs(t.x - touchStartPos.x);
+						let dy = Math.abs(t.y - touchStartPos.y);
+						if (dx > dragThreshold || dy > dragThreshold) {
+							touchLocked = dx > dy ? 'pan' : 'scroll';
+						}
+					}
+					if (touchLocked === 'pan') {
+						handleDragAt(t.x);
+						return false; // prevent page scroll
+					}
+					// touchLocked === 'scroll': don't return false, let browser scroll
+					if (touchLocked === 'scroll') {
+						isDragging = false;
+					}
+				}
+			};
+
+			p.touchEnded = () => {
+				if (p.touches.length === 0 && isDragging) {
+					handleReleaseAt(p.mouseX, p.mouseY);
+				}
+				touchStartPos = null;
+				touchLocked = null;
 			};
 
 			p.mouseWheel = (event) => {
@@ -350,6 +435,7 @@
 				p.clear();
 				let mx = p.mouseX, my = p.mouseY;
 				hoveredEvent = -1;
+				hoveredViaBox = false;
 				hoveredSpan = -1;
 
 				// Title
@@ -540,6 +626,7 @@
 					let hitDot = dx * dx + dy * dy <= dotHitRadius * dotHitRadius;
 					if (hitBox || hitDot) {
 						hoveredEvent = i;
+						hoveredViaBox = hitBox;
 					}
 				}
 
@@ -737,3 +824,11 @@
 </script>
 
 <div bind:this={container}></div>
+
+<style>
+	div :global(canvas) {
+		touch-action: pan-y;
+		border: 1px dashed var(--bg3);
+		border-radius: 0.4rem;
+	}
+</style>
