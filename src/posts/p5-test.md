@@ -582,7 +582,7 @@ Test page for visualization tools and interactive components.
     { start: '2024-01-01', end: '2024-07-01', label: 'H1 2024', color: [251, 73, 52] },
     { start: '2024-07-01', end: '2025-01-01', label: 'H2 2024', color: [184, 187, 38] },
     { start: '2025-01-01', end: '2025-07-01', label: 'H1 2025', color: [250, 189, 47] },
-    { start: '2025-07-01', end: '2026-01-01', label: 'H2 2025', color: [254, 128, 25] },
+    { start: '2025-07-01', end: 'today', label: 'H2 2025 (ongoing)', color: [254, 128, 25] },
   ]}
 />
 

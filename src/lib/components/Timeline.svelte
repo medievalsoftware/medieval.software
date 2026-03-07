@@ -10,11 +10,18 @@
 
 	const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-	function parseDate(s) { return new Date(s + 'T00:00:00'); }
+	function parseDate(s) {
+		if (s === 'today') {
+			let now = new Date();
+			return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		}
+		return new Date(s + 'T00:00:00');
+	}
 
 	function formatDate(s) {
 		let d = parseDate(s);
-		return `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+		let formatted = `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+		return s === 'today' ? formatted + ' (today)' : formatted;
 	}
 
 	function hexToRgb(hex) {
@@ -32,6 +39,7 @@
 		return {
 			bg: v('--bg_h'), bg1: v('--bg1'), bg2: v('--bg2'), bg3: v('--bg3'),
 			fg: v('--fg'), fg2: v('--fg2'), fg4: v('--fg4'),
+			orange: v('--orange'),
 		};
 	}
 
@@ -61,6 +69,12 @@
 				let daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 				return m + (d.getDate() - 1) / daysInMonth;
 			}
+
+			// Check if today falls within the timeline range
+			const today = new Date();
+			const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+			const todayPos = dateToPos(todayStr);
+			const showToday = todayPos >= 0 && todayPos <= totalMonths;
 
 			const margin = { left: 40, right: 20 };
 			const topPad = 16;
@@ -242,6 +256,28 @@
 					}
 				}
 
+				// Today marker (line + label drawn early; diamond drawn later on top)
+				if (showToday) {
+					let tx = monthToX(todayPos);
+					let spanBottom = timelineY + 36 + spanData.length * (spanH + spanGap);
+
+					// Dashed line spanning full height
+					p.stroke(...theme.orange, 100);
+					p.strokeWeight(1);
+					p.drawingContext.setLineDash([4, 3]);
+					p.line(tx, titleH + topPad, tx, spanBottom);
+					p.drawingContext.setLineDash([]);
+
+					// Label
+					p.noStroke();
+					p.fill(...theme.orange);
+					p.textSize(9);
+					p.textStyle(p.BOLD);
+					p.textAlign(p.CENTER, p.BOTTOM);
+					p.text('TODAY', tx, titleH + topPad - 2);
+					p.textStyle(p.NORMAL);
+				}
+
 				// Spans below timeline
 				let spanStartY = timelineY + 36;
 				let spanBottomY = spanStartY + spanData.length * (spanH + spanGap);
@@ -326,6 +362,22 @@
 					p.fill(...(hovered ? theme.fg : theme.fg2));
 					p.textAlign(p.CENTER, p.CENTER);
 					p.text(e.label, l.boxX + l.boxW / 2, l.boxY + l.boxH / 2);
+				}
+
+				// Today diamond (drawn last so it's on top of guide lines)
+				if (showToday) {
+					let tx = monthToX(todayPos);
+					p.noStroke();
+					p.fill(...theme.orange);
+					p.push();
+					p.translate(tx, timelineY);
+					p.beginShape();
+					p.vertex(0, -5);
+					p.vertex(4, 0);
+					p.vertex(0, 5);
+					p.vertex(-4, 0);
+					p.endShape(p.CLOSE);
+					p.pop();
 				}
 
 				// Tooltip for hovered or pinned event/span
