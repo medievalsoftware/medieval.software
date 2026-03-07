@@ -550,39 +550,33 @@ Test page for visualization tools and interactive components.
 # Timeline
 
 <Timeline
-  title="2024 Overview"
+  title="Medieval Software — Full Timeline"
   events={[
-    { date: '2024-01-14', label: 'Sickness', color: [251, 73, 52], detail: 'Out for two weeks' },
-    { date: '2024-02-20', label: 'Accepted offer', color: [184, 187, 38], detail: 'New position starting March' },
-    { date: '2024-03-15', label: 'Moved', color: [250, 189, 47] },
-    { date: '2024-05-06', label: 'Quit', color: [251, 73, 52], detail: 'Left to focus on personal projects' },
-    { date: '2024-07-10', label: 'Drive failure', color: [251, 73, 52], detail: 'Samsung Evo 970 died' },
-    { date: '2024-08-08', label: 'Engine migration', color: [131, 165, 152], detail: 'Migrated to Ebitengine' },
-    { date: '2024-10-01', label: 'New design', color: [142, 192, 124] },
-    { date: '2024-11-15', label: 'Scripting system', color: [211, 134, 155], detail: 'Plain Go with JSON configs' },
+    { date: '2023-01-03', label: 'Looking Forward', color: [142, 192, 124], detail: 'Returned home, planning Medieval Software LLC' },
+    { date: '2023-01-14', label: 'Devblog 1', color: [131, 165, 152], detail: 'Audio synthesizer & JagFX reverse engineering' },
+    { date: '2023-02-12', label: 'Devblog 2', color: [131, 165, 152], detail: 'Client architecture, networking, OpenGL/WebGL' },
+    { date: '2023-03-18', label: 'Devblog 3', color: [131, 165, 152], detail: 'Go scripting via Yaegi, code generation' },
+    { date: '2023-04-14', label: 'Blender RS', color: [211, 134, 155], detail: 'RuneScape models & animations in Blender' },
+    { date: '2023-05-04', label: 'Devblog 4', color: [131, 165, 152], detail: 'Burnout break, PostgreSQL + sqlc' },
+    { date: '2023-06-01', label: 'Devblog 5', color: [131, 165, 152], detail: 'Software renderer for 3D models & terrain' },
+    { date: '2023-07-17', label: 'Devblog 6', color: [131, 165, 152], detail: 'Interfaces, scene rendering, motivation rut' },
+    { date: '2023-10-03', label: 'Fall Cleaning', color: [250, 189, 47], detail: 'Site migration to SvelteKit + Gruvbox theme' },
+    { date: '2023-12-01', label: 'Devblog 7', color: [131, 165, 152], detail: 'UE5 experiment, model atlas, ClientScript1, audio' },
+    { date: '2024-07-01', label: 'Ebitengine', color: [184, 187, 38], detail: 'Deprecated custom engine, migrated to Ebitengine' },
+    { date: '2024-09-30', label: 'Devblog 8', color: [131, 165, 152], detail: '9 months of silent dev, comprehensive catchup' },
+    { date: '2024-12-13', label: 'Discontinued', color: [251, 73, 52], detail: 'Rune Synergy ended' },
+    { date: '2025-02-01', label: 'Moved', color: [250, 189, 47] },
+    { date: '2025-07-28', label: 'Left school', color: [254, 128, 25], detail: 'Completed spring + summer semesters' },
   ]}
   spans={[
-    { start: '2024-02-15', end: '2024-05-01', label: 'Day job', color: [254, 128, 25], detail: 'Full-time employment' },
-    { start: '2024-04-01', end: '2024-07-15', label: 'RuneBlend', color: [131, 165, 152], detail: 'Realtime Blender preview tool' },
-    { start: '2024-07-15', end: '2024-12-31', label: 'Rune Synergy', color: [142, 192, 124], detail: 'Main project focus' },
-  ]}
-/>
-
-## Alignment Test
-
-<Timeline
-  events={[
-    { date: '2024-01-01', label: 'Jan 1st', color: [251, 73, 52] },
-    { date: '2024-07-01', label: 'Jul 1st', color: [184, 187, 38] },
-    { date: '2025-01-01', label: 'Jan 1st', color: [250, 189, 47] },
-    { date: '2025-06-15', label: 'Jun 15th', color: [131, 165, 152] },
-    { date: '2025-12-01', label: 'Dec 1st', color: [211, 134, 155] },
-  ]}
-  spans={[
-    { start: '2024-01-01', end: '2024-07-01', label: 'H1 2024', color: [251, 73, 52] },
-    { start: '2024-07-01', end: '2025-01-01', label: 'H2 2024', color: [184, 187, 38] },
-    { start: '2025-01-01', end: '2025-07-01', label: 'H1 2025', color: [250, 189, 47] },
-    { start: '2025-07-01', end: 'today', label: 'H2 2025 (ongoing)', color: [254, 128, 25] },
+    { start: '2023-01-03', end: '2023-07-17', label: 'Active devblog era', color: [131, 165, 152], detail: 'Regular devblogs every 4-6 weeks' },
+    { start: '2023-03-18', end: '2023-04-28', label: 'Blender & RuneScape', color: [211, 134, 155], detail: 'Models & animations tooling' },
+    { start: '2023-07-17', end: '2023-12-01', label: 'Silent period', color: [146, 131, 116], detail: 'UE5 experiment, continued dev without blogging' },
+    { start: '2023-12-01', end: '2024-09-30', label: 'Heads-down dev', color: [142, 192, 124], detail: '9+ months of active development, no public updates' },
+    { start: '2025-01-13', end: '2025-05-09', label: 'Spring semester', color: [250, 189, 47], detail: '10-week accelerated course' },
+    { start: '2025-05-19', end: '2025-07-28', label: 'Summer semester', color: [250, 189, 47], detail: 'Second and final semester' },
+    { start: '2025-08-27', end: '2025-10-30', label: 'Contract #1', color: [184, 187, 38], detail: 'Full-time contract' },
+    { start: '2025-10-22', end: '2025-11-20', label: 'Contract #2', color: [184, 187, 38], detail: 'Full-time contract' },
   ]}
 />
 

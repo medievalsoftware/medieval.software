@@ -97,8 +97,27 @@
 			let hoveredSpan = -1;
 			let eventLayout = [];
 
+			// Viewport: pan & zoom
+			const defaultViewMonths = Math.min(12, totalMonths);
+			const minViewMonths = 4;
+			let viewMonths = defaultViewMonths;
+			let viewStart = 0;
+			let targetViewMonths = defaultViewMonths;
+			let targetViewStart = 0;
+			let zoomAnchorFrac = 0.5;
+			let isDragging = false;
+			let dragStartX = 0;
+			let dragStartView = 0;
+			let dragMoved = false;
+			const dragThreshold = 4;
+
+			function clampView() {
+				viewMonths = Math.max(minViewMonths, Math.min(totalMonths, viewMonths));
+				viewStart = Math.max(0, Math.min(totalMonths - viewMonths, viewStart));
+			}
+
 			function monthToX(month) {
-				return margin.left + (month / totalMonths) * (p.width - margin.left - margin.right);
+				return margin.left + ((month - viewStart) / viewMonths) * (p.width - margin.left - margin.right);
 			}
 
 			function computeHeight() {
@@ -111,12 +130,22 @@
 
 				titleH = titleText ? 28 : 0;
 
+				let contentLeft = margin.left;
+				let contentRight = p.width - margin.right;
+
 				eventLayout = keyEvents.map((e) => {
 					let x = monthToX(dateToPos(e.date));
 					let tw = p.textWidth(e.label);
 					let boxW = tw + boxPad * 2;
 					let boxX = x - boxW / 2;
-					boxX = Math.max(margin.left, Math.min(p.width - margin.right - boxW, boxX));
+
+					// Skip events fully off-screen (beyond the next non-visible one)
+					if (boxX + boxW < contentLeft - boxW || boxX > contentRight + boxW) {
+						return null;
+					}
+
+					// Clamp only if the box extends past the edge
+					boxX = Math.max(contentLeft, Math.min(contentRight - boxW, boxX));
 
 					let row = 0;
 					while (true) {
@@ -136,11 +165,11 @@
 					return { x, boxX, boxW, boxH, row };
 				});
 
-				eventRows = Math.max(1, rows.length);
+				eventRows = Math.max(eventRows, 1, rows.length);
 				timelineY = titleH + topPad + eventRows * rowH + 44;
 
 				for (let l of eventLayout) {
-					l.boxY = timelineY - 44 - l.row * rowH;
+					if (l) l.boxY = timelineY - 44 - l.row * rowH;
 				}
 
 				let h = computeHeight();
@@ -154,6 +183,8 @@
 				theme = readTheme(p.canvas.parentElement);
 				p.createCanvas(w, 320);
 				p.frameRate(30);
+
+				clampView();
 				layoutEvents();
 			};
 
@@ -167,32 +198,91 @@
 			};
 
 			p.mousePressed = () => {
-				if (hoveredEvent >= 0) {
-					if (pinnedEvent === hoveredEvent) {
-						pinnedEvent = -1;
-					} else {
-						pinnedEvent = hoveredEvent;
-						pinnedSpan = -1;
-						pinnedX = p.mouseX;
-						pinnedY = p.mouseY;
-					}
-				} else if (hoveredSpan >= 0) {
-					if (pinnedSpan === hoveredSpan) {
-						pinnedSpan = -1;
-					} else {
-						pinnedSpan = hoveredSpan;
-						pinnedEvent = -1;
-						pinnedX = p.mouseX;
-						pinnedY = p.mouseY;
-					}
-				} else {
-					pinnedEvent = -1;
-					pinnedSpan = -1;
+				if (p.mouseX < 0 || p.mouseX > p.width || p.mouseY < 0 || p.mouseY > p.height) return;
+				isDragging = true;
+				dragStartX = p.mouseX;
+				dragStartView = viewStart;
+				dragMoved = false;
+			};
+
+			p.mouseDragged = () => {
+				if (!isDragging) return;
+				let dx = p.mouseX - dragStartX;
+				if (Math.abs(dx) > dragThreshold) dragMoved = true;
+				if (dragMoved) {
+					let monthsPerPx = viewMonths / (p.width - margin.left - margin.right);
+					viewStart = dragStartView - dx * monthsPerPx;
+					targetViewStart = viewStart;
+					clampView();
+					targetViewStart = viewStart;
+					layoutEvents();
 				}
+			};
+
+			p.mouseReleased = () => {
+				if (isDragging && !dragMoved) {
+					// It was a click, not a drag — handle pin toggle
+					if (hoveredEvent >= 0) {
+						if (pinnedEvent === hoveredEvent) {
+							pinnedEvent = -1;
+						} else {
+							pinnedEvent = hoveredEvent;
+							pinnedSpan = -1;
+							pinnedX = p.mouseX;
+							pinnedY = p.mouseY;
+						}
+					} else if (hoveredSpan >= 0) {
+						if (pinnedSpan === hoveredSpan) {
+							pinnedSpan = -1;
+						} else {
+							pinnedSpan = hoveredSpan;
+							pinnedEvent = -1;
+							pinnedX = p.mouseX;
+							pinnedY = p.mouseY;
+						}
+					} else {
+						pinnedEvent = -1;
+						pinnedSpan = -1;
+					}
+				}
+				isDragging = false;
+			};
+
+			p.mouseWheel = (event) => {
+				if (p.mouseX < margin.left || p.mouseX > p.width - margin.right) return;
+				if (p.mouseY < 0 || p.mouseY > p.height) return;
+
+				zoomAnchorFrac = (p.mouseX - margin.left) / (p.width - margin.left - margin.right);
+				let monthUnderCursor = targetViewStart + zoomAnchorFrac * targetViewMonths;
+
+				// Scale proportionally to delta for smooth trackpad feel
+				let zoomFactor = 1 + event.delta * 0.003;
+				targetViewMonths *= zoomFactor;
+				targetViewMonths = Math.max(minViewMonths, Math.min(totalMonths, targetViewMonths));
+
+				// Anchor zoom to cursor position
+				targetViewStart = monthUnderCursor - zoomAnchorFrac * targetViewMonths;
+				targetViewStart = Math.max(0, Math.min(totalMonths - targetViewMonths, targetViewStart));
+				return false; // prevent page scroll
 			};
 
 			p.draw = () => {
 				if (!theme) return;
+
+				// Smooth zoom interpolation
+				let lerpAmt = 0.25;
+				let prevMonths = viewMonths;
+				let prevStart = viewStart;
+				viewMonths += (targetViewMonths - viewMonths) * lerpAmt;
+				viewStart += (targetViewStart - viewStart) * lerpAmt;
+				// Snap when close enough
+				if (Math.abs(viewMonths - targetViewMonths) < 0.01) viewMonths = targetViewMonths;
+				if (Math.abs(viewStart - targetViewStart) < 0.01) viewStart = targetViewStart;
+				clampView();
+				if (Math.abs(viewMonths - prevMonths) > 0.001 || Math.abs(viewStart - prevStart) > 0.001) {
+					layoutEvents();
+				}
+
 				p.clear();
 				let mx = p.mouseX, my = p.mouseY;
 				hoveredEvent = -1;
@@ -209,6 +299,12 @@
 					p.textStyle(p.NORMAL);
 				}
 
+				// Clip to content area
+				p.drawingContext.save();
+				p.drawingContext.beginPath();
+				p.drawingContext.rect(margin.left - 1, 0, p.width - margin.left - margin.right + 2, p.height);
+				p.drawingContext.clip();
+
 				// Timeline bar
 				p.stroke(...theme.bg3);
 				p.strokeWeight(2);
@@ -216,7 +312,7 @@
 
 				// Month ticks and labels
 				p.textSize(10);
-				let monthW = (p.width - margin.left - margin.right) / totalMonths;
+				let monthW = (p.width - margin.left - margin.right) / viewMonths;
 
 				// Week ticks (hide when months are too narrow)
 				if (monthW > 20) {
@@ -354,41 +450,59 @@
 					}
 				}
 
-				// Key events above timeline (right to left so earlier events draw on top)
+				// Key events above timeline
 				let boxRadius = 3;
 				p.textSize(11);
+
+				// Hit-test all events (boxes and dots on timeline)
+				let dotRadius = 5;
+				let dotHitRadius = dotRadius * 2;
 				for (let i = keyEvents.length - 1; i >= 0; i--) {
-					let e = keyEvents[i];
 					let l = eventLayout[i];
 					if (!l) continue;
-
-					if (mx >= l.boxX && mx <= l.boxX + l.boxW && my >= l.boxY && my <= l.boxY + l.boxH) {
+					let hitBox = mx >= l.boxX && mx <= l.boxX + l.boxW && my >= l.boxY && my <= l.boxY + l.boxH;
+					let dx = mx - l.x, dy = my - timelineY;
+					let hitDot = dx * dx + dy * dy <= dotHitRadius * dotHitRadius;
+					if (hitBox || hitDot) {
 						hoveredEvent = i;
 					}
+				}
 
-					let hovered = hoveredEvent === i;
+				// Draw row by row, top (highest row) to bottom (row 0, closest to timeline)
+				// Each row: lines first, then boxes — so lower rows' boxes cover higher rows' lines
+				for (let row = eventRows - 1; row >= 0; row--) {
+					// Lines and dots for this row
+					for (let i = 0; i < keyEvents.length; i++) {
+						let l = eventLayout[i];
+						if (!l || l.row !== row) continue;
+						let e = keyEvents[i];
+						let hovered = hoveredEvent === i;
 
-					// Line from box to timeline (extend into border radius for smooth join)
-					p.stroke(...e.color, hovered ? 160 : 50);
-					p.strokeWeight(1);
-					p.line(l.x, l.boxY + l.boxH - boxRadius, l.x, timelineY - 2);
+						p.stroke(...e.color, hovered ? 180 : 80);
+						p.strokeWeight(1);
+						p.line(l.x, l.boxY + l.boxH - boxRadius, l.x, timelineY - 2);
 
-					// Dot on timeline
-					p.noStroke();
-					p.fill(...e.color, hovered ? 255 : 140);
-					p.circle(l.x, timelineY, hovered ? 8 : 5);
+						p.noStroke();
+						p.fill(...e.color, hovered ? 255 : 180);
+						p.circle(l.x, timelineY, hovered ? dotRadius * 2 : dotRadius);
+					}
+					// Boxes and labels for this row
+					for (let i = 0; i < keyEvents.length; i++) {
+						let l = eventLayout[i];
+						if (!l || l.row !== row) continue;
+						let e = keyEvents[i];
+						let hovered = hoveredEvent === i;
 
-					// Box
-					p.fill(...(hovered ? theme.bg2 : theme.bg1));
-					p.stroke(...e.color, hovered ? 160 : 70);
-					p.strokeWeight(1);
-					p.rect(l.boxX, l.boxY, l.boxW, l.boxH, boxRadius);
+						p.fill(...(hovered ? theme.bg2 : theme.bg1));
+						p.stroke(...e.color, hovered ? 200 : 100);
+						p.strokeWeight(1);
+						p.rect(l.boxX, l.boxY, l.boxW, l.boxH, boxRadius);
 
-					// Label
-					p.noStroke();
-					p.fill(...(hovered ? theme.fg : theme.fg2));
-					p.textAlign(p.CENTER, p.CENTER);
-					p.text(e.label, l.boxX + l.boxW / 2, l.boxY + l.boxH / 2);
+						p.noStroke();
+						p.fill(...(hovered ? theme.fg : theme.fg2));
+						p.textAlign(p.CENTER, p.CENTER);
+						p.text(e.label, l.boxX + l.boxW / 2, l.boxY + l.boxH / 2);
+					}
 				}
 
 				// Today diamond (drawn last so it's on top of guide lines)
@@ -406,6 +520,9 @@
 					p.endShape(p.CLOSE);
 					p.pop();
 				}
+
+				// Restore from clip
+				p.drawingContext.restore();
 
 				// Tooltip for hovered or pinned event/span
 				let tipLines = [];
@@ -452,7 +569,13 @@
 					}
 				}
 
-				p.cursor(hoveredEvent >= 0 || hoveredSpan >= 0 ? p.HAND : p.ARROW);
+				if (isDragging) {
+					p.cursor('grabbing');
+				} else if (hoveredEvent >= 0 || hoveredSpan >= 0) {
+					p.cursor(p.HAND);
+				} else {
+					p.cursor('grab');
+				}
 			};
 		};
 	}
