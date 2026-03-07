@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import { loadProps, saveProps } from '$lib/persist.js';
 
 	/** @type {{ date: string, label: string, color: number[], detail?: string | string[], link?: string }[]} */
 	export let events = [];
@@ -88,18 +89,36 @@
 			const iconGap = 4;
 			const iconHalf = iconSize / 2;
 
-			// Compute span row assignments based on groups
+			// Compute span row assignments: grouped spans share rows, others pack greedily
 			const spanRowMap = [];
 			let totalSpanRows = 0;
 			const groupRows = {};
+			const rowOccupied = []; // each row has a list of [start, end] ranges
+
 			for (let i = 0; i < spanData.length; i++) {
 				let s = spanData[i];
+				let sStart = dateToPos(s.start);
+				let sEnd = dateToPos(s.end);
+
 				if (s.group && s.group in groupRows) {
 					spanRowMap[i] = groupRows[s.group];
+					rowOccupied[spanRowMap[i]].push([sStart, sEnd]);
 				} else {
-					spanRowMap[i] = totalSpanRows;
-					if (s.group) groupRows[s.group] = totalSpanRows;
-					totalSpanRows++;
+					// Find lowest row where this span fits
+					let row = 0;
+					while (true) {
+						if (!rowOccupied[row]) rowOccupied[row] = [];
+						let fits = true;
+						for (let [rs, re] of rowOccupied[row]) {
+							if (sStart < re && sEnd > rs) { fits = false; break; }
+						}
+						if (fits) break;
+						row++;
+					}
+					spanRowMap[i] = row;
+					if (s.group) groupRows[s.group] = row;
+					rowOccupied[row].push([sStart, sEnd]);
+					if (row + 1 > totalSpanRows) totalSpanRows = row + 1;
 				}
 			}
 			if (totalSpanRows === 0) totalSpanRows = 1;
@@ -117,12 +136,14 @@
 			let eventLayout = [];
 
 			// Viewport: pan & zoom
+			const storageKey = titleText || 'timeline';
+			const saved = loadProps('timeline:' + storageKey);
 			const defaultViewMonths = Math.min(12, totalMonths);
 			const minViewMonths = 4;
-			let viewMonths = defaultViewMonths;
-			let viewStart = 0;
-			let targetViewMonths = defaultViewMonths;
-			let targetViewStart = 0;
+			let viewMonths = saved.viewMonths ?? defaultViewMonths;
+			let viewStart = saved.viewStart ?? 0;
+			let targetViewMonths = viewMonths;
+			let targetViewStart = viewStart;
 			let zoomAnchorFrac = 0.5;
 			let isDragging = false;
 			let dragStartX = 0;
@@ -202,7 +223,7 @@
 				let w = p.canvas?.parentElement?.clientWidth || 780;
 				theme = readTheme(p.canvas.parentElement);
 				p.createCanvas(w, 320);
-				p.frameRate(30);
+				p.frameRate(10);
 
 				clampView();
 				layoutEvents();
@@ -308,18 +329,23 @@
 				if (!theme) return;
 
 				// Smooth zoom interpolation
-				let lerpAmt = 0.25;
+				let lerpAmt = 0.4;
 				let prevMonths = viewMonths;
 				let prevStart = viewStart;
 				viewMonths += (targetViewMonths - viewMonths) * lerpAmt;
 				viewStart += (targetViewStart - viewStart) * lerpAmt;
 				// Snap when close enough
-				if (Math.abs(viewMonths - targetViewMonths) < 0.01) viewMonths = targetViewMonths;
-				if (Math.abs(viewStart - targetViewStart) < 0.01) viewStart = targetViewStart;
+				let animating = Math.abs(viewMonths - targetViewMonths) > 0.01 || Math.abs(viewStart - targetViewStart) > 0.01;
+				if (!animating) { viewMonths = targetViewMonths; viewStart = targetViewStart; }
 				clampView();
 				if (Math.abs(viewMonths - prevMonths) > 0.001 || Math.abs(viewStart - prevStart) > 0.001) {
 					layoutEvents();
+					saveProps('timeline:' + storageKey, { viewStart, viewMonths });
 				}
+
+				// Boost frame rate when active, idle when not
+				let active = animating || isDragging || (p.mouseX >= 0 && p.mouseX <= p.width && p.mouseY >= 0 && p.mouseY <= p.height);
+				p.frameRate(active ? 60 : 10);
 
 				p.clear();
 				let mx = p.mouseX, my = p.mouseY;
@@ -483,8 +509,19 @@
 
 					p.fill(...theme.fg, hovered ? 255 : 200);
 					p.textAlign(p.LEFT, p.CENTER);
-					if (x2 - x1 > p.textWidth(s.label) + 12) {
-						p.text(s.label, x1 + 6, y + spanH / 2);
+					let labelX = Math.max(x1 + 6, margin.left + 6);
+					let availW = x2 - labelX - 6;
+					if (availW > 12) {
+						let label = s.label;
+						if (p.textWidth(label) > availW) {
+							let ellipsis = '...';
+							let ew = p.textWidth(ellipsis);
+							while (label.length > 0 && p.textWidth(label) + ew > availW) {
+								label = label.slice(0, -1);
+							}
+							label += ellipsis;
+						}
+						p.text(label, labelX, y + spanH / 2);
 					}
 				}
 
