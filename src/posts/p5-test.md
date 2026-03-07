@@ -7,6 +7,7 @@ description: Interactive p5.js sketches running in the browser, integrated with 
 ---
 <script>
 import P5 from '$lib/components/P5.svelte';
+import Timeline from '$lib/components/Timeline.svelte';
 import PositionPad from '$lib/components/PositionPad.svelte';
 import AnglePicker from '$lib/components/AnglePicker.svelte';
 import NumberInput from '$lib/components/NumberInput.svelte';
@@ -422,6 +423,7 @@ $: saveProps('boids', {
 	boidGradient, boidSpeedCurve,
 });
 
+
 function boidsSketch(p) {
 	let flock = [];
 
@@ -540,9 +542,51 @@ function boidsSketch(p) {
 		boidReadout = flock.length;
 	};
 }
+
 </script>
 
 Test page for visualization tools and interactive components.
+
+# Timeline
+
+<Timeline
+  title="2024 Overview"
+  events={[
+    { date: '2024-01-14', label: 'Sickness', color: [251, 73, 52], detail: 'Out for two weeks' },
+    { date: '2024-02-20', label: 'Accepted offer', color: [184, 187, 38], detail: 'New position starting March' },
+    { date: '2024-03-15', label: 'Moved', color: [250, 189, 47] },
+    { date: '2024-05-06', label: 'Quit', color: [251, 73, 52], detail: 'Left to focus on personal projects' },
+    { date: '2024-07-10', label: 'Drive failure', color: [251, 73, 52], detail: 'Samsung Evo 970 died' },
+    { date: '2024-08-08', label: 'Engine migration', color: [131, 165, 152], detail: 'Migrated to Ebitengine' },
+    { date: '2024-10-01', label: 'New design', color: [142, 192, 124] },
+    { date: '2024-11-15', label: 'Scripting system', color: [211, 134, 155], detail: 'Plain Go with JSON configs' },
+  ]}
+  spans={[
+    { start: '2024-02-15', end: '2024-05-01', label: 'Day job', color: [254, 128, 25], detail: 'Full-time employment' },
+    { start: '2024-04-01', end: '2024-07-15', label: 'RuneBlend', color: [131, 165, 152], detail: 'Realtime Blender preview tool' },
+    { start: '2024-07-15', end: '2024-12-31', label: 'Rune Synergy', color: [142, 192, 124], detail: 'Main project focus' },
+  ]}
+/>
+
+## Alignment Test
+
+<Timeline
+  events={[
+    { date: '2024-01-01', label: 'Jan 1st', color: [251, 73, 52] },
+    { date: '2024-07-01', label: 'Jul 1st', color: [184, 187, 38] },
+    { date: '2025-01-01', label: 'Jan 1st', color: [250, 189, 47] },
+    { date: '2025-06-15', label: 'Jun 15th', color: [131, 165, 152] },
+    { date: '2025-12-01', label: 'Dec 1st', color: [211, 134, 155] },
+  ]}
+  spans={[
+    { start: '2024-01-01', end: '2024-07-01', label: 'H1 2024', color: [251, 73, 52] },
+    { start: '2024-07-01', end: '2025-01-01', label: 'H2 2024', color: [184, 187, 38] },
+    { start: '2025-01-01', end: '2025-07-01', label: 'H1 2025', color: [250, 189, 47] },
+    { start: '2025-07-01', end: '2026-01-01', label: 'H2 2025', color: [254, 128, 25] },
+  ]}
+/>
+
+---
 
 # Particle Emitter
 
@@ -692,3 +736,4 @@ Test page for visualization tools and interactive components.
     <Prop name="Speed Curve" tip="Remaps speed to gradient position" value={boidSpeedCurve} default={DEFAULT_SPEED_CURVE} reset={() => boidSpeedCurve = structuredClone(DEFAULT_SPEED_CURVE)}><CurveEditor bind:points={boidSpeedCurve} color="aqua" /></Prop>
   {/if}
 </P5>
+
