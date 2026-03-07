@@ -15,10 +15,22 @@ import RangeSlider from '$lib/components/RangeSlider.svelte';
 import VecInput from '$lib/components/VecInput.svelte';
 import GradientEditor from '$lib/components/GradientEditor.svelte';
 import CurveEditor from '$lib/components/CurveEditor.svelte';
+import Dropdown from '$lib/components/Dropdown.svelte';
 import Prop from '$lib/components/Prop.svelte';
 import { loadProps, saveProps } from '$lib/persist.js';
 import { hexToRgb } from '$lib/color.js';
 import { sampleCurve } from '$lib/curve.js';
+
+// -- Helpers --
+function canvasBg(canvas) {
+	let s = getComputedStyle(canvas.parentElement);
+	let hex = s.getPropertyValue('--bg').trim();
+	return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+
+function canvasWidth(p) {
+	return p.canvas?.parentElement?.clientWidth || 600;
+}
 
 // -- Particle system --
 let ptab = 'emitter';
@@ -49,11 +61,15 @@ function particleSketch(p) {
 	let particles = [];
 
 	p.setup = () => {
-		p.createCanvas(600, 300);
+		p.createCanvas(canvasWidth(p), 300);
+	};
+
+	p.windowResized = () => {
+		p.resizeCanvas(canvasWidth(p), 300);
 	};
 
 	p.draw = () => {
-		p.background(30);
+		p.clear();
 
 		for (let i = 0; i < rate; i++) {
 			let angle = p.radians(emitAngle) + p.radians(p.random(-spread, spread));
@@ -119,13 +135,21 @@ function sketch(p) {
 		};
 	}
 
+	let bg;
+
 	p.setup = () => {
-		p.createCanvas(600, 300);
+		p.createCanvas(canvasWidth(p), 300);
+		bg = canvasBg(p.canvas);
 		for (let i = 0; i < count; i++) balls.push(makeBall());
 	};
 
+	p.windowResized = () => {
+		p.resizeCanvas(canvasWidth(p), 300);
+		bg = canvasBg(p.canvas);
+	};
+
 	p.draw = () => {
-		p.background(30, trail ? 25 : 255);
+		if (trail) { p.background(...bg, 25); } else { p.clear(); }
 
 		while (balls.length < count) balls.push(makeBall());
 		while (balls.length > count) balls.pop();
@@ -216,12 +240,25 @@ $: saveProps('easing-visualizer', { easingPoints, easingDuration, easingCount, e
 function easingSketch(p) {
 	let frame = 0;
 	let buf;
+	let bg;
 
-	p.setup = () => {
-		p.createCanvas(600, 300);
+	function initBuf() {
+		if (buf) buf.remove();
 		buf = p.createGraphics(p.width, p.height);
 		buf.pixelDensity(1);
-		buf.background(30);
+		buf.background(...bg);
+	}
+
+	p.setup = () => {
+		p.createCanvas(canvasWidth(p), 300);
+		bg = canvasBg(p.canvas);
+		initBuf();
+	};
+
+	p.windowResized = () => {
+		p.resizeCanvas(canvasWidth(p), 300);
+		bg = canvasBg(p.canvas);
+		initBuf();
 	};
 
 	p.draw = () => {
@@ -232,19 +269,19 @@ function easingSketch(p) {
 		let usableW = w - margin * 2;
 		let usableH = h - margin * 2;
 
-		// Fade trail buffer toward bg(30) with guaranteed convergence
+		// Fade trail buffer toward bg with guaranteed convergence
 		if (easingTrail) {
 			buf.loadPixels();
 			let px = buf.pixels;
 			for (let i = 0; i < px.length; i += 4) {
 				let d;
-				d = 30 - px[i];   if (d) { let s = d >> 3; px[i]   += s || (d > 0 ? 1 : -1); }
-				d = 30 - px[i+1]; if (d) { let s = d >> 3; px[i+1] += s || (d > 0 ? 1 : -1); }
-				d = 30 - px[i+2]; if (d) { let s = d >> 3; px[i+2] += s || (d > 0 ? 1 : -1); }
+				d = bg[0] - px[i];   if (d) { let s = d >> 3; px[i]   += s || (d > 0 ? 1 : -1); }
+				d = bg[1] - px[i+1]; if (d) { let s = d >> 3; px[i+1] += s || (d > 0 ? 1 : -1); }
+				d = bg[2] - px[i+2]; if (d) { let s = d >> 3; px[i+2] += s || (d > 0 ? 1 : -1); }
 			}
 			buf.updatePixels();
 		} else {
-			buf.background(30);
+			buf.background(...bg);
 		}
 
 		// Draw objects onto trail buffer
@@ -263,7 +300,7 @@ function easingSketch(p) {
 		}
 
 		// Composite: buffer + curve reference on top
-		p.background(30);
+		p.clear();
 		p.image(buf, 0, 0);
 
 		p.stroke(142, 192, 124, 30);
@@ -284,10 +321,21 @@ function terrainSketch(p) {
 	let buf;
 	let lastParams = '';
 
-	p.setup = () => {
-		p.createCanvas(600, 300);
+	function initBuf() {
+		if (buf) buf.remove();
 		buf = p.createGraphics(p.width, p.height);
 		buf.pixelDensity(1);
+		lastParams = '';
+	}
+
+	p.setup = () => {
+		p.createCanvas(canvasWidth(p), 300);
+		initBuf();
+	};
+
+	p.windowResized = () => {
+		p.resizeCanvas(canvasWidth(p), 300);
+		initBuf();
 	};
 
 	function renderTerrain() {
@@ -304,7 +352,7 @@ function terrainSketch(p) {
 			buf.loadPixels();
 			let px = buf.pixels;
 			for (let i = 0; i < px.length; i += 4) {
-				px[i] = 30; px[i + 1] = 30; px[i + 2] = 30; px[i + 3] = 255;
+				px[i] = 0; px[i + 1] = 0; px[i + 2] = 0; px[i + 3] = 0;
 			}
 
 			for (let layer = terrainLayers - 1; layer >= 0; layer--) {
@@ -328,13 +376,14 @@ function terrainSketch(p) {
 							px[idx]     = px[idx]     * (1 - a) + r * a;
 							px[idx + 1] = px[idx + 1] * (1 - a) + g * a;
 							px[idx + 2] = px[idx + 2] * (1 - a) + b * a;
+							px[idx + 3] = 255;
 						}
 					}
 				}
 			}
 			buf.updatePixels();
 		} else {
-			buf.background(30);
+			buf.clear();
 			for (let layer = terrainLayers - 1; layer >= 0; layer--) {
 				let layerT = terrainLayers > 1 ? layer / (terrainLayers - 1) : 0;
 				let layerSpeed = 0.4 + layerT * 0.6;
@@ -383,7 +432,7 @@ function terrainSketch(p) {
 			renderTerrain();
 		}
 
-		p.background(30);
+		p.clear();
 		p.image(buf, 0, 0);
 	};
 }
@@ -436,13 +485,21 @@ function boidsSketch(p) {
 		};
 	}
 
+	let bg;
+
 	p.setup = () => {
-		p.createCanvas(600, 300);
+		p.createCanvas(canvasWidth(p), 300);
+		bg = canvasBg(p.canvas);
 		for (let i = 0; i < boidsCount; i++) flock.push(makeBoid());
 	};
 
+	p.windowResized = () => {
+		p.resizeCanvas(canvasWidth(p), 300);
+		bg = canvasBg(p.canvas);
+	};
+
 	p.draw = () => {
-		p.background(30, boidTrail ? 25 : 255);
+		if (boidTrail) { p.background(...bg, 25); } else { p.clear(); }
 
 		while (flock.length < boidsCount) flock.push(makeBoid());
 		while (flock.length > boidsCount) flock.pop();
@@ -593,7 +650,6 @@ Test page for visualization tools and interactive components.
   ]}
 />
 
----
 
 # Particle Emitter
 
@@ -637,7 +693,6 @@ Test page for visualization tools and interactive components.
   {/if}
 </P5>
 
----
 
 # Bouncing Ball
 
@@ -656,18 +711,17 @@ Test page for visualization tools and interactive components.
   </Prop>
 </P5>
 
----
 
 # Terrain Generator
 
 <P5 sketch={terrainSketch}>
   <Prop name="Style" tip="Rendering mode for the terrain" bind:value={terrainStyle} default={'filled'}>
-    <select bind:value={terrainStyle}>
-      <option value="filled">Filled</option>
-      <option value="outline">Outline</option>
-      <option value="dots">Dots</option>
-      <option value="bars">Bars</option>
-    </select>
+    <Dropdown bind:value={terrainStyle} options={[
+      { value: 'filled', label: 'Filled' },
+      { value: 'outline', label: 'Outline' },
+      { value: 'dots', label: 'Dots' },
+      { value: 'bars', label: 'Bars' },
+    ]} />
   </Prop>
   <Prop name="Height" tip="Min and max terrain height range" value={[heightLow, heightHigh]} default={[20, 80]} reset={() => { heightLow = 20; heightHigh = 80 }}><RangeSlider bind:low={heightLow} bind:high={heightHigh} min={0} max={100} step={1} color="aqua" /></Prop>
   <Prop name="Scale" tip="Perlin noise frequency — higher is bumpier" bind:value={noiseScale} default={0.012}><NumberInput bind:value={noiseScale} label="f" color="orange" min={0.001} max={0.05} precision={3} sensitivity={0.0002} /></Prop>
@@ -677,7 +731,6 @@ Test page for visualization tools and interactive components.
   <Prop name="Animate" tip="Auto-scroll the terrain" bind:value={terrainAnimate} default={true}><input type="checkbox" bind:checked={terrainAnimate} /></Prop>
 </P5>
 
----
 
 # Easing Visualizer
 
@@ -696,7 +749,6 @@ Test page for visualization tools and interactive components.
   </Prop>
 </P5>
 
----
 
 # Boids Flocking
 

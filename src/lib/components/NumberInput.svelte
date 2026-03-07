@@ -128,7 +128,7 @@
 		margin: 1px;
 		border-radius: var(--radius-sm);
 		background: var(--label-color-dim);
-		color: rgba(255, 255, 255, 0.9);
+		color: var(--fg);
 		font-weight: bold;
 		font-size: 0.85em;
 		cursor: ew-resize;

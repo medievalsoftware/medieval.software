@@ -90,7 +90,7 @@
 	}
 
 	.arm {
-		stroke: rgba(255, 255, 255, 0.15);
+		stroke: var(--bg3);
 		stroke-width: 1px;
 	}
 
@@ -104,7 +104,7 @@
 	}
 
 	.tick-minor {
-		stroke: rgba(255, 255, 255, 0.2);
+		stroke: var(--bg4);
 		stroke-width: 1px;
 	}
 </style>

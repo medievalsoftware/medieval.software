@@ -93,7 +93,7 @@
 	}
 
 	.grid-line {
-		stroke: rgba(255, 255, 255, 0.08);
+		stroke: var(--bg2);
 		stroke-width: 1px;
 		stroke-dasharray: 3 3;
 		vector-effect: non-scaling-stroke;
@@ -108,7 +108,7 @@
 		position: absolute;
 		inset: 0;
 		border-radius: 50%;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid var(--bg2);
 		pointer-events: none;
 	}
 
@@ -117,7 +117,7 @@
 		left: 0;
 		right: 0;
 		height: 1px;
-		background: rgba(255, 255, 255, 0.15);
+		background: var(--bg3);
 		pointer-events: none;
 		transform: translateY(-50%);
 	}
@@ -127,7 +127,7 @@
 		top: 0;
 		bottom: 0;
 		width: 1px;
-		background: rgba(255, 255, 255, 0.15);
+		background: var(--bg3);
 		pointer-events: none;
 		transform: translateX(-50%);
 	}

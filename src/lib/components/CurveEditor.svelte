@@ -697,11 +697,11 @@
 		display: flex;
 		flex-direction: column;
 		min-width: 8rem;
-		background: rgba(20, 20, 20, 0.95);
-		border: 1px solid rgba(255, 255, 255, 0.12);
+		background: var(--bg_h);
+		border: 1px solid var(--bg3);
 		border-radius: 4px;
-		backdrop-filter: blur(6px);
 		padding: 2px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 	}
 
 	.curve-preset-menu button {
@@ -715,7 +715,7 @@
 	}
 
 	.curve-preset-menu button:hover {
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--bg2);
 		color: var(--fg1);
 	}
 
@@ -734,14 +734,14 @@
 	}
 
 	.grid-line {
-		stroke: rgba(255, 255, 255, 0.08);
+		stroke: var(--bg2);
 		stroke-width: 1px;
 		stroke-dasharray: 3 3;
 		vector-effect: non-scaling-stroke;
 	}
 
 	.ref-line {
-		stroke: rgba(255, 255, 255, 0.05);
+		stroke: var(--bg1);
 		stroke-width: 1px;
 		vector-effect: non-scaling-stroke;
 	}
@@ -771,7 +771,7 @@
 	}
 
 	.tangent-handle {
-		stroke: rgba(0, 0, 0, 0.5);
+		stroke: var(--bg_h);
 		stroke-width: 1px;
 		vector-effect: non-scaling-stroke;
 		pointer-events: none;
@@ -800,7 +800,7 @@
 
 	.keyframe-point {
 		fill: var(--accent);
-		stroke: rgba(0, 0, 0, 0.6);
+		stroke: var(--bg_h);
 		stroke-width: 1.5px;
 		vector-effect: non-scaling-stroke;
 		cursor: grab;
@@ -820,10 +820,10 @@
 		flex-direction: column;
 		min-width: 10rem;
 		padding: 3px;
-		background: rgba(20, 20, 20, 0.95);
-		border: 1px solid rgba(255, 255, 255, 0.12);
+		background: var(--bg_h);
+		border: 1px solid var(--bg3);
 		border-radius: 4px;
-		backdrop-filter: blur(6px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 		font-size: 0.75em;
 	}
 
@@ -840,7 +840,7 @@
 	}
 
 	.curve-context-menu button:hover {
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--bg2);
 		color: var(--fg1);
 	}
 
@@ -851,7 +851,7 @@
 
 	.ctx-divider {
 		height: 1px;
-		background: rgba(255, 255, 255, 0.08);
+		background: var(--bg2);
 		margin: 2px 4px;
 	}
 
@@ -874,8 +874,8 @@
 		height: 56px;
 		transform: translate(-50%, -50%);
 		border-radius: 50%;
-		background: rgba(20, 20, 20, 0.92);
-		border: 1.5px solid rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--bg_h) 92%, transparent);
+		border: 1.5px solid var(--bg3);
 		color: var(--fg3);
 		font-size: 0.65em;
 		white-space: nowrap;
@@ -885,13 +885,13 @@
 
 	.orbital-item.active {
 		transform: translate(-50%, -50%) scale(1.18);
-		background: rgba(255, 255, 255, 0.15);
+		background: var(--bg2);
 		color: var(--fg1);
 		border-color: var(--accent);
 	}
 
 	.orbital-item.danger.active {
-		background: rgba(200, 50, 50, 0.25);
+		background: color-mix(in srgb, var(--red) 25%, transparent);
 		border-color: var(--red);
 		color: var(--red);
 	}
@@ -902,8 +902,8 @@
 
 	.orbital-item.disabled.active {
 		transform: translate(-50%, -50%);
-		background: rgba(20, 20, 20, 0.92);
-		border-color: rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--bg_h) 92%, transparent);
+		border-color: var(--bg3);
 		color: var(--fg3);
 	}
 </style>

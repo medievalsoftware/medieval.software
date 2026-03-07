@@ -159,6 +159,6 @@
 	.prop-reset:hover {
 		opacity: 1;
 		color: var(--orange);
-		background: rgba(255, 255, 255, 0.06);
+		background: var(--bg1);
 	}
 </style>

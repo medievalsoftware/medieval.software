@@ -145,9 +145,14 @@
 		min-width: 0;
 	}
 
+	.p5-canvas {
+		flex: 1;
+		min-width: 0;
+	}
+
 	.p5-canvas :global(canvas) {
 		display: block;
-		max-width: 100%;
+		width: 100%;
 		height: auto;
 	}
 
@@ -156,9 +161,9 @@
 		z-index: 10;
 		display: flex;
 		flex-direction: column;
-		background: rgba(20, 20, 20, 0.92);
+		background: color-mix(in srgb, var(--bg_h) 92%, transparent);
 		border-radius: 4px;
-		border: 1px solid rgba(255, 255, 255, 0.08);
+		border: 1px solid var(--bg3);
 		font-size: 0.75rem;
 		color: var(--fg2);
 		transition: top 0.15s, right 0.15s, bottom 0.15s, left 0.15s;
@@ -189,10 +194,9 @@
 		grid-template-columns: 1fr 1fr;
 		gap: 1px;
 		padding: 3px;
-		background: rgba(20, 20, 20, 0.95);
-		border: 1px solid rgba(255, 255, 255, 0.12);
+		background: var(--bg_h);
+		border: 1px solid var(--bg3);
 		border-radius: 4px;
-		backdrop-filter: blur(6px);
 	}
 
 	.p5-corner-popover button {
@@ -215,12 +219,12 @@
 
 	.p5-corner-popover button:hover {
 		opacity: 1;
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--bg2);
 	}
 
 	.p5-corner-popover button.active {
 		opacity: 1;
-		background: rgba(255, 255, 255, 0.18);
+		background: var(--bg3);
 	}
 
 	.p5-overlay-btn {
@@ -241,7 +245,7 @@
 
 	.p5-overlay-btn:hover {
 		opacity: 1;
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--bg2);
 	}
 
 	.p5-overlay-content {
@@ -400,7 +404,7 @@
 	}
 
 	.p5-props :global(fieldset) {
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		border: 1px solid var(--bg3);
 		border-radius: var(--radius);
 		margin: 0.4rem 0.5rem;
 		padding: 0;
