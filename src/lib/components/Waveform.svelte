@@ -17,6 +17,8 @@
 	export let gridX = 0;
 	/** @type {number} base interval in samples for adaptive X subdivisions (0 = off) */
 	export let xSubdiv = 0;
+	/** @type {{ start: number, end: number } | null} selected sample range (inclusive) */
+	export let selection = null;
 
 	let canvas;
 	let ctx;
@@ -27,13 +29,19 @@
 	let dirty = true;
 	let marginLeft = 0;
 	let plotW = 0;
+	let hoveredSample = -1;
+
+	// Cached resolved colors
+	let resolvedColor = '#8ec07c';
+	let gridColor = '#665c54';
+	let labelColor = '#a89984';
 
 	// Viewport: 0..1 range over data
 	let viewStart = 0;
 	let viewEnd = 1;
 	let targetStart = 0;
 	let targetEnd = 1;
-	const minSpan = 0.001; // minimum visible fraction
+	let minSpan = 0.001;
 
 	// Interaction
 	let isDragging = false;
@@ -50,6 +58,15 @@
 	let touchStartPos = null;
 	let touchLocked = null;
 
+	function clientXToSample(clientX) {
+		let rect = canvas.getBoundingClientRect();
+		let mx = clientX - rect.left - marginLeft;
+		let pw = plotW || (w - marginLeft);
+		let frac = mx / pw;
+		let dataFrac = viewStart + frac * (viewEnd - viewStart);
+		return Math.round(dataFrac * data.length);
+	}
+
 	function clampView() {
 		let span = viewEnd - viewStart;
 		span = Math.max(minSpan, Math.min(1, span));
@@ -64,6 +81,19 @@
 		targetEnd = targetStart + span;
 	}
 
+	function resolveColors() {
+		if (!canvas) return;
+		let style = getComputedStyle(canvas);
+		if (color.startsWith('var(')) {
+			let varName = color.slice(4, -1).trim();
+			resolvedColor = style.getPropertyValue(varName).trim() || '#8ec07c';
+		} else {
+			resolvedColor = color;
+		}
+		gridColor = style.getPropertyValue('--bg3').trim() || '#665c54';
+		labelColor = style.getPropertyValue('--fg4').trim() || '#a89984';
+	}
+
 	function resize() {
 		if (!canvas) return;
 		let rect = canvas.parentElement.getBoundingClientRect();
@@ -74,6 +104,7 @@
 		canvas.height = h * dpr;
 		canvas.style.width = w + 'px';
 		canvas.style.height = h + 'px';
+		resolveColors();
 		dirty = true;
 	}
 
@@ -109,15 +140,7 @@
 			return;
 		}
 
-		// Resolve CSS colors
-		let resolved = color;
-		if (color.startsWith('var(')) {
-			let varName = color.slice(4, -1).trim();
-			resolved = getComputedStyle(canvas).getPropertyValue(varName).trim() || '#8ec07c';
-		}
-		let style = getComputedStyle(canvas);
-		let gridColor = style.getPropertyValue('--bg3').trim() || '#665c54';
-		let labelColor = style.getPropertyValue('--fg4').trim() || '#a89984';
+		let resolved = resolvedColor;
 
 		// Build gridline arrays
 		let yLines = [];
@@ -273,6 +296,35 @@
 		ctx.rect(marginLeft, marginTop, plotW, plotH);
 		ctx.clip();
 
+		let pxPerSample = plotW / visibleLen;
+
+		// Draw selection highlight
+		selLeftX = -1;
+		selRightX = -1;
+		if (selection) {
+			let selX1 = idxToX(selection.start);
+			let selX2 = idxToX(selection.end);
+			let halfPx = pxPerSample * 0.5;
+			selX1 -= halfPx;
+			selX2 += halfPx;
+			selLeftX = selX1;
+			selRightX = selX2;
+			ctx.fillStyle = resolved;
+			ctx.globalAlpha = 0.1;
+			ctx.fillRect(selX1, marginTop, selX2 - selX1, plotH);
+			// Edge lines
+			ctx.globalAlpha = 0.5;
+			ctx.strokeStyle = resolved;
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			ctx.moveTo(selX1, marginTop);
+			ctx.lineTo(selX1, marginTop + plotH);
+			ctx.moveTo(selX2, marginTop);
+			ctx.lineTo(selX2, marginTop + plotH);
+			ctx.stroke();
+			ctx.globalAlpha = 1;
+		}
+
 		// Draw waveform
 		ctx.strokeStyle = resolved;
 		ctx.lineWidth = 1;
@@ -281,12 +333,30 @@
 			// Few enough samples: draw as connected line
 			ctx.beginPath();
 			for (let i = startIdx; i < endIdx; i++) {
-				let x = marginLeft + ((i - startIdx) / visibleLen) * plotW;
+				let x = idxToX(i);
 				let y = valToY(data[i] || 0);
 				if (i === startIdx) ctx.moveTo(x, y);
 				else ctx.lineTo(x, y);
 			}
 			ctx.stroke();
+
+			// Draw sample dots when zoomed in enough
+			if (pxPerSample >= 8) {
+				let dotAlpha = Math.min(1, (pxPerSample - 8) / 8);
+				let dotR = Math.min(3.5, 1.5 + pxPerSample * 0.05);
+				ctx.fillStyle = resolved;
+				for (let i = startIdx; i < endIdx; i++) {
+					let x = idxToX(i);
+					let y = valToY(data[i] || 0);
+					let isHovered = i === hoveredSample;
+					let isSelected = selection && i >= selection.start && i <= selection.end;
+					ctx.globalAlpha = isHovered || isSelected ? 1 : dotAlpha * 0.7;
+					ctx.beginPath();
+					ctx.arc(x, y, isHovered ? dotR + 1.5 : (isSelected ? dotR + 0.5 : dotR), 0, Math.PI * 2);
+					ctx.fill();
+				}
+				ctx.globalAlpha = 1;
+			}
 		} else {
 			// Many samples: filled min/max envelope for natural AA on edges
 			let cols = Math.ceil(plotW);
@@ -330,7 +400,10 @@
 	}
 
 	// Mark dirty when data changes
-	$: if (data) dirty = true;
+	$: if (data) {
+		dirty = true;
+		minSpan = data.length > 0 ? Math.min(0.001, 20 / data.length) : 0.001;
+	}
 
 	function onWheel(e) {
 		e.preventDefault();
@@ -363,14 +436,79 @@
 		clampTarget();
 	}
 
+	let selDragStart = -1;
+	let isSelecting = false;
+	let selEdgeDrag = null; // 'left' | 'right' | null
+	let selLeftX = -1;
+	let selRightX = -1;
+	const EDGE_GRAB = 6; // px grab zone
+
+	function selEdgeXFromIdx(idx) {
+		let frac = idx / data.length;
+		let vFrac = (frac - viewStart) / (viewEnd - viewStart);
+		return marginLeft + vFrac * plotW;
+	}
+
+	function hitTestSelEdge(clientX) {
+		if (!selection || !canvas) return null;
+		let rect = canvas.getBoundingClientRect();
+		let mx = clientX - rect.left;
+		let len = data.length;
+		let pxPerSample = plotW / ((viewEnd - viewStart) * len);
+		let halfPx = pxPerSample * 0.5;
+		let leftX = selEdgeXFromIdx(selection.start) - halfPx;
+		let rightX = selEdgeXFromIdx(selection.end) + halfPx;
+		// Prefer closer edge
+		let dLeft = Math.abs(mx - leftX);
+		let dRight = Math.abs(mx - rightX);
+		if (dLeft <= EDGE_GRAB && dLeft <= dRight) return 'left';
+		if (dRight <= EDGE_GRAB) return 'right';
+		return null;
+	}
+
 	function onMouseDown(e) {
+		// Check selection edge grab
+		let edge = hitTestSelEdge(e.clientX);
+		if (edge) {
+			selEdgeDrag = edge;
+			return;
+		}
+		if (e.shiftKey) {
+			isSelecting = true;
+			selDragStart = clientXToSample(e.clientX);
+			selection = { start: selDragStart, end: selDragStart };
+			dirty = true;
+			return;
+		}
 		isDragging = true;
 		dragStartX = e.clientX;
 		dragStartView = viewStart;
 		dragMoved = false;
+		selDragStart = clientXToSample(e.clientX);
 	}
 
 	function onMouseMove(e) {
+		if (selEdgeDrag) {
+			let idx = clientXToSample(e.clientX);
+			idx = Math.max(0, Math.min(data.length - 1, idx));
+			if (selEdgeDrag === 'left') {
+				selection = { start: Math.min(idx, selection.end), end: selection.end };
+			} else {
+				selection = { start: selection.start, end: Math.max(idx, selection.start) };
+			}
+			dirty = true;
+			return;
+		}
+		if (isSelecting) {
+			let idx = clientXToSample(e.clientX);
+			idx = Math.max(0, Math.min(data.length - 1, idx));
+			selection = {
+				start: Math.min(selDragStart, idx),
+				end: Math.max(selDragStart, idx)
+			};
+			dirty = true;
+			return;
+		}
 		if (!isDragging) return;
 		let dx = e.clientX - dragStartX;
 		if (Math.abs(dx) > dragThreshold) dragMoved = true;
@@ -388,7 +526,55 @@
 		}
 	}
 
-	function onMouseUp() {
+	let nearEdge = false;
+
+	function onCanvasMouseMove(e) {
+		// Check if near selection edge for cursor
+		if (selection && !isDragging && !isSelecting && !selEdgeDrag) {
+			let wasNear = nearEdge;
+			nearEdge = hitTestSelEdge(e.clientX) !== null;
+			if (nearEdge !== wasNear) {
+				canvas.style.cursor = nearEdge ? 'ew-resize' : '';
+			}
+		} else if (nearEdge && !selEdgeDrag) {
+			nearEdge = false;
+			canvas.style.cursor = '';
+		}
+
+		let visibleLen = Math.ceil((viewEnd - viewStart) * data.length);
+		let pxPerSample = (plotW || (w - marginLeft)) / visibleLen;
+		if (pxPerSample >= 8) {
+			let idx = clientXToSample(e.clientX);
+			if (idx >= 0 && idx < data.length && idx !== hoveredSample) {
+				hoveredSample = idx;
+				dirty = true;
+			}
+		} else if (hoveredSample >= 0) {
+			hoveredSample = -1;
+			dirty = true;
+		}
+	}
+
+	function onCanvasMouseLeave() {
+		if (hoveredSample >= 0) {
+			hoveredSample = -1;
+			dirty = true;
+		}
+	}
+
+	function onMouseUp(e) {
+		if (selEdgeDrag) {
+			selEdgeDrag = null;
+			return;
+		}
+		if (isSelecting) {
+			isSelecting = false;
+			return;
+		}
+		if (isDragging && !dragMoved && selection) {
+			selection = null;
+			dirty = true;
+		}
 		isDragging = false;
 	}
 
@@ -502,8 +688,12 @@
 	on:touchstart={onTouchStart}
 	on:touchmove={onTouchMove}
 	on:touchend={onTouchEnd}
+	on:mousemove={onCanvasMouseMove}
+	on:mouseleave={onCanvasMouseLeave}
 	class="waveform"
 	class:dragging={isDragging && dragMoved}
+	class:selecting={isSelecting}
+	class:edge-drag={selEdgeDrag !== null}
 ></canvas>
 
 <style>
@@ -518,5 +708,13 @@
 
 	.waveform.dragging {
 		cursor: grabbing;
+	}
+
+	.waveform.selecting {
+		cursor: crosshair;
+	}
+
+	.waveform.edge-drag {
+		cursor: ew-resize;
 	}
 </style>
