@@ -16,10 +16,27 @@ import VecInput from '$lib/components/VecInput.svelte';
 import GradientEditor from '$lib/components/GradientEditor.svelte';
 import CurveEditor from '$lib/components/CurveEditor.svelte';
 import Dropdown from '$lib/components/Dropdown.svelte';
+import Waveform from '$lib/components/Waveform.svelte';
 import Prop from '$lib/components/Prop.svelte';
 import { loadProps, saveProps } from '$lib/persist.js';
 import { hexToRgb } from '$lib/color.js';
 import { sampleCurve } from '$lib/curve.js';
+
+// -- Waveform demo --
+let waveformData = new Float32Array(44100 * 3); // 3 seconds at 44.1kHz
+{
+	let sr = 44100;
+	for (let i = 0; i < waveformData.length; i++) {
+		let t = i / sr;
+		let env = Math.exp(-t * 0.8) * (1 - Math.exp(-t * 40));
+		let sig = Math.sin(2 * Math.PI * 220 * t)
+			+ 0.5 * Math.sin(2 * Math.PI * 440 * t + Math.sin(t * 6))
+			+ 0.3 * Math.sin(2 * Math.PI * 660 * t)
+			+ 0.15 * Math.sin(2 * Math.PI * 110 * t * (1 + 0.5 * Math.sin(t * 2)));
+		let noise = (Math.random() - 0.5) * 0.05;
+		waveformData[i] = (sig * env + noise) * 0.4;
+	}
+}
 
 // -- Helpers --
 function canvasBg(canvas) {
@@ -647,6 +664,25 @@ Test page for visualization tools and interactive components.
     { start: '2025-10-22', end: '2025-11-20', label: 'Contract #2', color: [184, 187, 38], detail: 'Full-time contract', group: 'contracts' },
     { start: '2025-10-05', end: 'today', label: 'Caretaking', color: [211, 134, 155], detail: 'Partner\'s medical episodes' },
     { start: '2026-02-01', end: 'today', label: 'Unpacking', color: [146, 131, 116], detail: 'Still going...' },
+  ]}
+/>
+
+
+# Waveform
+
+<Waveform data={waveformData} color="var(--aqua)" height={160}
+  min={-1} max={1}
+  gridY={[
+    { value: 1, label: '1.0' },
+    { value: 0.5, label: '0.5' },
+    { value: 0, label: '0' },
+    { value: -0.5, label: '-0.5' },
+    { value: -1, label: '-1.0' },
+  ]}
+  gridX={[
+    { pos: 44100, label: '1s' },
+    { pos: 88200, label: '2s' },
+    { pos: 132300, label: '3s' },
   ]}
 />
 
