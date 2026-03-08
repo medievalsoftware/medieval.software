@@ -28,6 +28,20 @@
 		track.setPointerCapture(e.pointerId);
 	}
 
+	function onTrackDown(e) {
+		let val = valFromEvent(e);
+		let distLow = Math.abs(val - low);
+		let distHigh = Math.abs(val - high);
+		let handle = distLow <= distHigh ? 'low' : 'high';
+		dragging = handle;
+		track.setPointerCapture(e.pointerId);
+		if (handle === 'low') {
+			low = Math.min(val, high);
+		} else {
+			high = Math.max(val, low);
+		}
+	}
+
 	function onPointerMove(e) {
 		if (!dragging) return;
 		const val = valFromEvent(e);
@@ -50,6 +64,7 @@
 	bind:this={track}
 	on:pointermove={onPointerMove}
 	on:pointerup={onPointerUp}
+	on:pointerdown={onTrackDown}
 	on:lostpointercapture={onPointerUp}
 	style="--fill-color: var(--{color}-dim)"
 >
