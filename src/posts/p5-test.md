@@ -17,6 +17,7 @@ import GradientEditor from '$lib/components/GradientEditor.svelte';
 import CurveEditor from '$lib/components/CurveEditor.svelte';
 import Dropdown from '$lib/components/Dropdown.svelte';
 import Waveform from '$lib/components/Waveform.svelte';
+
 import Prop from '$lib/components/Prop.svelte';
 import { loadProps, saveProps } from '$lib/persist.js';
 import { hexToRgb } from '$lib/color.js';
@@ -684,7 +685,9 @@ Test page for visualization tools and interactive components.
     { pos: 88200, label: '2s' },
     { pos: 132300, label: '3s' },
   ]}
+  xSubdiv={44100}
 />
+
 
 
 # Particle Emitter

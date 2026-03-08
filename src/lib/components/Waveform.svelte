@@ -15,6 +15,8 @@
 	export let gridY = 0;
 	/** @type {number | { pos: number, label?: string }[]} */
 	export let gridX = 0;
+	/** @type {number} base interval in samples for adaptive X subdivisions (0 = off) */
+	export let xSubdiv = 0;
 
 	let canvas;
 	let ctx;
@@ -139,11 +141,40 @@
 			xLines = gridX.map(g => typeof g === 'number' ? { pos: g } : g);
 		}
 
+		// Adaptive X subdivisions
+		let xSubLines = [];
+		if (xSubdiv > 0) {
+			let visibleSamples = (viewEnd - viewStart) * len;
+			let interval = xSubdiv;
+			let minVisible = 8;
+			// Halve interval until we have enough visible gridlines
+			while (visibleSamples / interval < minVisible && interval > 1) {
+				interval = Math.floor(interval / 2);
+			}
+			// Generate sub-gridlines across the visible range
+			let firstTick = Math.ceil((viewStart * len) / interval) * interval;
+			// Collect major positions for duplicate check
+			let majorSet = new Set(xLines.map(l => l.pos));
+			for (let pos = firstTick; pos < viewEnd * len; pos += interval) {
+				if (majorSet.has(pos) || pos === 0) continue;
+				let secs = pos / xSubdiv;
+				let label;
+				if (secs === Math.floor(secs)) {
+					label = secs + 's';
+				} else {
+					// Show as decimal seconds, trim trailing zeros
+					let decimals = Math.max(1, Math.ceil(-Math.log10(interval / xSubdiv)));
+					label = secs.toFixed(decimals).replace(/0+$/, '').replace(/\.$/, '') + 's';
+				}
+				xSubLines.push({ pos, label });
+			}
+		}
+
 		// Compute margins
 		let hasYLabels = yLines.some(l => l.label);
 		marginLeft = hasYLabels ? 36 : 0;
 		let marginTop = 8;
-		let marginBottom = xLines.some(l => l.label) ? 16 : 0;
+		let marginBottom = (xLines.some(l => l.label) || xSubLines.length > 0) ? 16 : 0;
 		plotW = w - marginLeft;
 		let plotH = h - marginTop - marginBottom;
 		let range = max - min;
@@ -212,6 +243,30 @@
 			}
 		}
 
+		// Draw X sub-gridlines
+		for (let line of xSubLines) {
+			let x = idxToX(line.pos);
+			if (x < marginLeft || x > w) continue;
+			ctx.strokeStyle = gridColor;
+			ctx.lineWidth = 1;
+			ctx.globalAlpha = 0.12;
+			ctx.setLineDash([2, 4]);
+			ctx.beginPath();
+			ctx.moveTo(x, marginTop);
+			ctx.lineTo(x, marginTop + plotH);
+			ctx.stroke();
+			ctx.setLineDash([]);
+			ctx.globalAlpha = 1;
+
+			if (line.label) {
+				ctx.fillStyle = labelColor;
+				ctx.globalAlpha = 0.4;
+				ctx.textAlign = 'center';
+				ctx.fillText(line.label, x, marginTop + plotH + 11);
+				ctx.globalAlpha = 1;
+			}
+		}
+
 		// Clip to plot area
 		ctx.save();
 		ctx.beginPath();
@@ -233,12 +288,14 @@
 			}
 			ctx.stroke();
 		} else {
-			// Many samples: min/max per pixel column
-			ctx.beginPath();
-			let prevMx = valToY(0), prevMn = valToY(0);
-			for (let px = 0; px < plotW; px++) {
-				let s = startIdx + Math.floor((px / plotW) * visibleLen);
-				let e = startIdx + Math.floor(((px + 1) / plotW) * visibleLen);
+			// Many samples: filled min/max envelope for natural AA on edges
+			let cols = Math.ceil(plotW);
+			let maxYs = new Array(cols);
+			let minYs = new Array(cols);
+			let count = 0;
+			for (let px = 0; px < cols; px++) {
+				let s = startIdx + Math.floor((px / cols) * visibleLen);
+				let e = startIdx + Math.floor(((px + 1) / cols) * visibleLen);
 				if (s >= len) break;
 				e = Math.min(e, len);
 				let mn = Infinity, mx = -Infinity;
@@ -248,14 +305,23 @@
 					if (v > mx) mx = v;
 				}
 				if (mn === Infinity) continue;
-				let y1 = valToY(mx);
-				let y2 = valToY(mn);
-				ctx.moveTo(marginLeft + px, Math.min(y1, prevMx));
-				ctx.lineTo(marginLeft + px, Math.max(y2, prevMn));
-				prevMx = y1;
-				prevMn = y2;
+				maxYs[count] = valToY(mx);
+				minYs[count] = valToY(mn);
+				count++;
 			}
-			ctx.stroke();
+			if (count > 0) {
+				ctx.beginPath();
+				ctx.moveTo(marginLeft, maxYs[0]);
+				for (let i = 1; i < count; i++) {
+					ctx.lineTo(marginLeft + i, maxYs[i]);
+				}
+				for (let i = count - 1; i >= 0; i--) {
+					ctx.lineTo(marginLeft + i, minYs[i]);
+				}
+				ctx.closePath();
+				ctx.fillStyle = resolved;
+				ctx.fill();
+			}
 		}
 
 		ctx.restore();
