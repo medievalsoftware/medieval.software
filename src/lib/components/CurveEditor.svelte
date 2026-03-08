@@ -14,7 +14,7 @@
 	const H = 200;
 	const TANGENT_RADIUS = 50;
 	const REMOVE_DISTANCE = 30;
-	const POINT_RADIUS = 5;
+
 
 	let svg;
 	let selected = -1;
@@ -26,6 +26,28 @@
 	let removing = false;
 	let contextMenu = null;
 	let presetOpen = false;
+
+	let svgScale = 1; // viewBox units per CSS pixel
+
+	function updateScale() {
+		if (!svg) return;
+		let rect = svg.getBoundingClientRect();
+		svgScale = rect.width > 0 ? W / rect.width : 1;
+	}
+
+	function measureAction(node) {
+		svgScale = W / (node.getBoundingClientRect().width || W);
+		let ro = new ResizeObserver(() => {
+			svgScale = W / (node.getBoundingClientRect().width || W);
+		});
+		ro.observe(node);
+		return { destroy: () => ro.disconnect() };
+	}
+
+	// Desired sizes in CSS pixels
+	const PX_POINT = 5;
+	const PX_HANDLE = 4;
+	const PX_HIT = 14;
 
 	let longPressTimer = null;
 	const LONG_PRESS_MS = 500;
@@ -350,7 +372,7 @@
 		closeContextMenu();
 
 		const { x: sx, y: sy } = svgCoords(e);
-		let hit = hitTestPoint(sx, sy, POINT_RADIUS * 2);
+		let hit = hitTestPoint(sx, sy, PX_HIT * svgScale);
 		if (hit >= 0) { selected = hit; return; }
 
 		const { x, y } = toNorm(sx, sy);
@@ -360,7 +382,7 @@
 	function onContextMenu(e) {
 		e.preventDefault();
 		const { x: sx, y: sy } = svgCoords(e);
-		let hitIdx = hitTestPoint(sx, sy, POINT_RADIUS * 3);
+		let hitIdx = hitTestPoint(sx, sy, PX_HIT * svgScale);
 		if (hitIdx >= 0) selected = hitIdx;
 
 		contextMenu = {
@@ -544,6 +566,7 @@
 		class="curve-svg"
 		viewBox="0 0 {W} {H}"
 		bind:this={svg}
+		use:measureAction
 		on:pointermove={onPointerMove}
 		on:pointerup={onPointerUp}
 		on:lostpointercapture={onPointerUp}
@@ -576,15 +599,15 @@
 				{#if si > 0 && s[si - 1].interpolation === 'cubic'}
 					<g class="tangent-group" on:pointerdown={(e) => onTangentPointerDown(e, i, 'tangentIn')}>
 						<line x1={ptSvg.x} y1={ptSvg.y} x2={hIn.x} y2={hIn.y} class="tangent-line" />
-						<circle cx={hIn.x} cy={hIn.y} r={4} class="tangent-handle handle-in" />
-						<circle cx={hIn.x} cy={hIn.y} r={14} class="tangent-hit" />
+						<circle cx={hIn.x} cy={hIn.y} r={PX_HANDLE * svgScale} class="tangent-handle handle-in" />
+						<circle cx={hIn.x} cy={hIn.y} r={PX_HIT * svgScale} class="tangent-hit" />
 					</g>
 				{/if}
 				{#if point.interpolation === 'cubic'}
 					<g class="tangent-group" on:pointerdown={(e) => onTangentPointerDown(e, i, 'tangentOut')}>
 						<line x1={ptSvg.x} y1={ptSvg.y} x2={hOut.x} y2={hOut.y} class="tangent-line" />
-						<circle cx={hOut.x} cy={hOut.y} r={4} class="tangent-handle handle-out" />
-						<circle cx={hOut.x} cy={hOut.y} r={14} class="tangent-hit" />
+						<circle cx={hOut.x} cy={hOut.y} r={PX_HANDLE * svgScale} class="tangent-handle handle-out" />
+						<circle cx={hOut.x} cy={hOut.y} r={PX_HIT * svgScale} class="tangent-hit" />
 					</g>
 				{/if}
 			{/if}
@@ -593,7 +616,7 @@
 		<!-- Keyframe points (diamonds) -->
 		{#each points as point, i}
 			{@const ps = toSvg(point.x, point.y)}
-			{@const d = POINT_RADIUS}
+			{@const d = PX_POINT * svgScale}
 			<rect
 				x={ps.x - d} y={ps.y - d} width={d * 2} height={d * 2}
 				transform="rotate(45 {ps.x} {ps.y})"

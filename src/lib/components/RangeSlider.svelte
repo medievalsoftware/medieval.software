@@ -70,8 +70,8 @@
 >
 	<div class="range-track"></div>
 	<div class="range-fill" style="left:{lowPct}%;width:{highPct - lowPct}%"></div>
-	<div class="range-grip" style="left:{lowPct}%" on:pointerdown={(e) => onPointerDown(e, 'low')}></div>
-	<div class="range-grip" style="left:{highPct}%" on:pointerdown={(e) => onPointerDown(e, 'high')}></div>
+	<div class="range-grip" style="left:{lowPct}%" on:pointerdown|stopPropagation={(e) => onPointerDown(e, 'low')}></div>
+	<div class="range-grip" style="left:{highPct}%" on:pointerdown|stopPropagation={(e) => onPointerDown(e, 'high')}></div>
 </div>
 
 <style>
