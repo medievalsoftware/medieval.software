@@ -318,6 +318,12 @@
 			let touchStartPos = null;
 			let touchLocked = null; // null = undecided, 'pan' = horizontal, 'scroll' = vertical
 
+			// Inertia (Apple UIScrollView.DecelerationRate.normal = 0.998/ms)
+			let velocity = 0;
+			let lastTouchX = 0;
+			let lastTouchTime = 0;
+			const decayRate = 0.998;
+
 			p.touchStarted = () => {
 				if (p.touches.length === 2) {
 					let t = p.touches;
@@ -334,6 +340,9 @@
 					let t = p.touches[0];
 					touchStartPos = { x: t.x, y: t.y };
 					touchLocked = null;
+					velocity = 0;
+					lastTouchX = t.x;
+					lastTouchTime = performance.now();
 					handlePressAt(t.x, t.y);
 				}
 			};
@@ -362,6 +371,15 @@
 						}
 					}
 					if (touchLocked === 'pan') {
+						let now = performance.now();
+						let dt = now - lastTouchTime;
+						if (dt > 0) {
+							let monthsPerPx = viewMonths / (p.width - margin.left - margin.right);
+							let dxPx = t.x - lastTouchX;
+							velocity = -dxPx * monthsPerPx / dt;
+						}
+						lastTouchX = t.x;
+						lastTouchTime = now;
 						handleDragAt(t.x);
 						return false; // prevent page scroll
 					}
@@ -376,6 +394,8 @@
 				if (p.touches.length === 0 && isDragging) {
 					handleReleaseAt(p.mouseX, p.mouseY);
 				}
+				// Kill velocity if finger stopped before lifting
+				if (performance.now() - lastTouchTime > 60) velocity = 0;
 				touchStartPos = null;
 				touchLocked = null;
 			};
@@ -413,6 +433,15 @@
 			p.draw = () => {
 				if (!theme) return;
 
+				// Apply inertia
+				let frameDt = p.deltaTime || 16;
+				if (Math.abs(velocity) > 0.000001) {
+					targetViewStart += velocity * frameDt;
+					targetViewStart = Math.max(0, Math.min(totalMonths - targetViewMonths, targetViewStart));
+					velocity *= Math.pow(decayRate, frameDt);
+					if (Math.abs(velocity) < 0.000001) velocity = 0;
+				}
+
 				// Smooth zoom interpolation
 				let lerpAmt = 0.4;
 				let prevMonths = viewMonths;
@@ -420,7 +449,7 @@
 				viewMonths += (targetViewMonths - viewMonths) * lerpAmt;
 				viewStart += (targetViewStart - viewStart) * lerpAmt;
 				// Snap when close enough
-				let animating = Math.abs(viewMonths - targetViewMonths) > 0.01 || Math.abs(viewStart - targetViewStart) > 0.01;
+				let animating = Math.abs(viewMonths - targetViewMonths) > 0.01 || Math.abs(viewStart - targetViewStart) > 0.01 || Math.abs(velocity) > 0.000001;
 				if (!animating) { viewMonths = targetViewMonths; viewStart = targetViewStart; }
 				clampView();
 				if (Math.abs(viewMonths - prevMonths) > 0.001 || Math.abs(viewStart - prevStart) > 0.001) {

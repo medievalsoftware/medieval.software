@@ -58,6 +58,13 @@
 	let touchStartPos = null;
 	let touchLocked = null;
 
+	// Inertia (Apple UIScrollView.DecelerationRate.normal = 0.998/ms)
+	let velocity = 0;
+	let lastTouchX = 0;
+	let lastTouchTime = 0;
+	let lastFrameTime = 0;
+	const decayRate = 0.998;
+
 	function clientXToSample(clientX) {
 		let rect = canvas.getBoundingClientRect();
 		let mx = clientX - rect.left - marginLeft;
@@ -111,13 +118,26 @@
 	function draw() {
 		if (!ctx || !w) return;
 
+		// Apply inertia
+		let now = performance.now();
+		let frameDt = lastFrameTime ? now - lastFrameTime : 16;
+		lastFrameTime = now;
+		if (Math.abs(velocity) > 0.000001) {
+			let span = targetEnd - targetStart;
+			targetStart += velocity * frameDt;
+			targetEnd = targetStart + span;
+			clampTarget();
+			velocity *= Math.pow(decayRate, frameDt);
+			if (Math.abs(velocity) < 0.000001) velocity = 0;
+		}
+
 		// Lerp viewport
 		let lerpAmt = 0.4;
 		let prevStart = viewStart;
 		let prevEnd = viewEnd;
 		viewStart += (targetStart - viewStart) * lerpAmt;
 		viewEnd += (targetEnd - viewEnd) * lerpAmt;
-		let animating = Math.abs(viewStart - targetStart) > 0.00001 || Math.abs(viewEnd - targetEnd) > 0.00001;
+		let animating = Math.abs(viewStart - targetStart) > 0.00001 || Math.abs(viewEnd - targetEnd) > 0.00001 || Math.abs(velocity) > 0.000001;
 		if (!animating) { viewStart = targetStart; viewEnd = targetEnd; }
 		clampView();
 
@@ -602,6 +622,9 @@
 			dragStartX = t.clientX;
 			dragStartView = viewStart;
 			dragMoved = false;
+			velocity = 0;
+			lastTouchX = t.clientX;
+			lastTouchTime = performance.now();
 		}
 	}
 
@@ -636,6 +659,17 @@
 
 			if (touchLocked === 'pan') {
 				e.preventDefault();
+				let now = performance.now();
+				let dt = now - lastTouchTime;
+				if (dt > 0) {
+					let pw = plotW || (w - marginLeft);
+					let span = viewEnd - viewStart;
+					let dxPx = t.clientX - lastTouchX;
+					velocity = -(dxPx / pw) * span / dt;
+				}
+				lastTouchX = t.clientX;
+				lastTouchTime = now;
+
 				let dx = t.clientX - dragStartX;
 				if (Math.abs(dx) > dragThreshold) dragMoved = true;
 				if (dragMoved) {
@@ -657,6 +691,8 @@
 	}
 
 	function onTouchEnd() {
+		// Kill velocity if the touch was stale (finger stopped before lifting)
+		if (performance.now() - lastTouchTime > 60) velocity = 0;
 		isDragging = false;
 		touchStartPos = null;
 		touchLocked = null;
