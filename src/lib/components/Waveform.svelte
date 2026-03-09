@@ -116,7 +116,10 @@
 	}
 
 	function draw() {
-		if (!ctx || !w) return;
+		if (!ctx || !w) {
+			raf = requestAnimationFrame(draw);
+			return;
+		}
 
 		// Apply inertia
 		let now = performance.now();
@@ -259,8 +262,8 @@
 		}
 
 		// Draw X gridlines
-		let startIdx = Math.floor(viewStart * len);
-		let endIdx = Math.ceil(viewEnd * len);
+		let startIdx = Math.max(0, Math.floor(viewStart * len) - 1);
+		let endIdx = Math.min(len, Math.ceil(viewEnd * len) + 1);
 		let visibleLen = endIdx - startIdx;
 
 		for (let line of xLines) {
@@ -454,6 +457,8 @@
 		}
 
 		clampTarget();
+		velocity = 0;
+		dirty = true;
 	}
 
 	let selDragStart = -1;
