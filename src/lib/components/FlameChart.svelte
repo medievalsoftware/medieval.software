@@ -239,7 +239,7 @@
 			let maxTextW = barRight - textLeft;
 			if (maxTextW > 28) {
 				ctx.fillStyle = dimmed ? fg4Color : fgColor;
-				ctx.font = `${Math.min(12, rowHeight - 6)}px 'Fira Mono', monospace`;
+				ctx.font = `${Math.min(13, rowHeight - 6)}px 'Fira Mono', monospace`;
 				ctx.textBaseline = 'middle';
 				let text = bar.node.name;
 				if (ctx.measureText(text).width > maxTextW) {
@@ -262,7 +262,7 @@
 			let lines = [bar.node.name, `${bar.node.value} (${pct}%)`];
 			if (bar.node.detail) lines.push(bar.node.detail);
 
-			let fontSize = 11;
+			let fontSize = 12;
 			ctx.font = `${fontSize}px 'Fira Mono', monospace`;
 			let lineH = fontSize + 4;
 			let padX = 6, padY = 4;

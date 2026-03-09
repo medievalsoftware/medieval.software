@@ -429,7 +429,7 @@
 		grid-template-columns: 5rem 1fr;
 		align-items: center;
 		gap: 0.3rem;
-		padding: 0.3rem 0.6rem;
+		padding: 0.3rem 0.8rem;
 		min-height: 1.8em;
 		border-bottom: 1px solid var(--bg1);
 		cursor: pointer;

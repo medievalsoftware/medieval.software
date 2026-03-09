@@ -233,7 +233,7 @@
 
 	function layoutEvents() {
 		if (!ctx) return;
-		setFont(11);
+		setFont(13);
 		let rows = [];
 
 		titleH = title ? 28 : 0;
@@ -406,7 +406,7 @@
 
 		// Title
 		if (title) {
-			setFont(13, true);
+			setFont(14, true);
 			ctx.fillStyle = rgba(theme.fg);
 			ctx.textAlign = 'left';
 			ctx.textBaseline = 'top';
@@ -425,7 +425,7 @@
 		line(margin.left, timelineY, w - margin.right, timelineY);
 
 		// Month ticks and labels
-		setFont(10);
+		setFont(12);
 		let monthW = (w - margin.left - margin.right) / viewMonths;
 
 		// Week ticks
@@ -470,14 +470,14 @@
 				let isLast = i === totalMonths - 1;
 				let showLabel = isLast || (i % skip === 0);
 				if (showLabel) {
-					setFont(10);
+					setFont(12);
 					ctx.fillStyle = rgba(theme.fg4);
 					ctx.textAlign = 'center';
 					ctx.textBaseline = 'top';
 					ctx.fillText(MONTH_NAMES[mi], monthToX(i + 0.5), timelineY + 8);
 				}
 				if (mi === 0 || i === 0) {
-					setFont(9);
+					setFont(11);
 					ctx.fillStyle = rgba(theme.fg4);
 					ctx.textAlign = 'center';
 					ctx.textBaseline = 'top';
@@ -497,7 +497,7 @@
 			line(tx, titleH + topPad, tx, spanBottom);
 			ctx.setLineDash([]);
 
-			setFont(9, true);
+			setFont(11, true);
 			ctx.fillStyle = rgba(theme.orange);
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'bottom';
@@ -534,7 +534,7 @@
 		ctx.setLineDash([]);
 
 		// Span bars
-		setFont(10);
+		setFont(12);
 		for (let i = 0; i < spans.length; i++) {
 			let s = spans[i];
 			let x1 = monthToX(dateToPos(s.start));
@@ -571,7 +571,7 @@
 		}
 
 		// Key events - hit-test
-		setFont(11);
+		setFont(13);
 		for (let i = events.length - 1; i >= 0; i--) {
 			let l = eventLayout[i];
 			if (!l) continue;
@@ -617,7 +617,7 @@
 				ctx.stroke();
 
 				// Label
-				setFont(11);
+				setFont(13);
 				ctx.fillStyle = rgba(hovered ? theme.fg : theme.fg2);
 				ctx.textAlign = 'left';
 				ctx.textBaseline = 'middle';
@@ -658,18 +658,13 @@
 						ctx.restore();
 					} else {
 						let c = hovered ? theme.fg : theme.fg4;
-						ctx.strokeStyle = rgba(c);
-						ctx.lineWidth = 1;
-						ctx.beginPath();
-						ctx.arc(ix, iy, iconSize / 2, 0, Math.PI * 2);
-						ctx.stroke();
-						setFont(7, true);
+						setFont(11, true);
 						ctx.fillStyle = rgba(c);
 						ctx.textAlign = 'center';
 						ctx.textBaseline = 'middle';
 						ctx.fillText('i', ix, iy + 1);
 					}
-					setFont(11);
+					setFont(13);
 				}
 			}
 		}
@@ -716,7 +711,7 @@
 		}
 
 		if (tipLines.length > 0) {
-			setFont(10);
+			setFont(12);
 			let padX = 6;
 			let padY = 5;
 			let lineH = 14;

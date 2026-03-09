@@ -181,7 +181,7 @@
 
 			// Label
 			let label = format ? format(val, hoverIdx) : val.toFixed(precision);
-			ctx.font = "10px 'Fira Mono', monospace";
+			ctx.font = "12px 'Fira Mono', monospace";
 			let tw = ctx.measureText(label).width;
 			let padX = 4, padY = 2;
 			let lw = tw + padX * 2;

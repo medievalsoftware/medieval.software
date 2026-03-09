@@ -1,9 +1,9 @@
 ---
-title: Components Test
+title: Interactive Demos
 date: '17 February 2026'
 publish: true
 icon: /category/test.png
-description: Interactive p5.js sketches running in the browser, integrated with Svelte components.
+description: A collection of interactive components built with raw canvas and Svelte.
 ---
 <script>
 import P5 from '$lib/components/P5.svelte';
@@ -668,7 +668,7 @@ function boidsSketch(p) {
 
 </script>
 
-Test page for visualization tools and interactive components.
+Most of the demonstrations in previous posts relied on recorded video of p5.js sketches, which ended up lossy and ugly. These components are built with raw canvas and JavaScript so that ideas can be conveyed interactively without any compression artifacts.
 
 # Timeline
 

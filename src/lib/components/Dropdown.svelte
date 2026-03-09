@@ -32,6 +32,8 @@
 <style>
 	.dropdown-wrap {
 		position: relative;
+		flex: 1;
+		min-width: 0;
 	}
 
 	.dropdown-btn {
@@ -40,8 +42,9 @@
 		align-items: center;
 		gap: 4px;
 		width: 100%;
-		padding: 2px 6px;
-		font-size: 1em;
+		height: var(--input-h, 1.6em);
+		padding: 0 6px;
+		font-size: 0.9em;
 		color: var(--fg2);
 		background: var(--bg1);
 		border: 1px solid var(--bg3);

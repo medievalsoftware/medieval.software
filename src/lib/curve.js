@@ -79,29 +79,6 @@ export function sampleCurve(points, t) {
 }
 
 /**
- * Generate SVG path `d` string by sampling the curve at regular intervals.
- * Y is inverted (SVG y-down → curve y-up).
- * @param {import('./curve.js').Keyframe[]} points
- * @param {number} w - SVG width
- * @param {number} h - SVG height
- * @param {number} [steps=100]
- * @returns {string}
- */
-export function curvePathData(points, w, h, steps = 100) {
-	if (!points || points.length === 0) return '';
-
-	const parts = [];
-	for (let i = 0; i <= steps; i++) {
-		const t = i / steps;
-		const y = sampleCurve(points, t);
-		const sx = t * w;
-		const sy = (1 - y) * h;
-		parts.push(`${i === 0 ? 'M' : 'L'}${sx.toFixed(2)},${sy.toFixed(2)}`);
-	}
-	return parts.join(' ');
-}
-
-/**
  * @typedef {{
  *   x: number,
  *   y: number,

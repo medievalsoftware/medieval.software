@@ -236,7 +236,7 @@
 		}
 
 		// Draw Y gridlines
-		ctx.font = '9px sans-serif';
+		ctx.font = "11px 'Fira Mono', monospace";
 		ctx.textBaseline = 'middle';
 		for (let line of yLines) {
 			let y = valToY(line.value);
@@ -745,10 +745,12 @@
 	.waveform {
 		display: block;
 		width: 100%;
+		padding: 0.4rem 0;
 		cursor: grab;
 		touch-action: pan-y;
 		border: 1px dashed var(--bg3);
 		border-radius: 0.4rem;
+		box-sizing: content-box;
 	}
 
 	.waveform.dragging {

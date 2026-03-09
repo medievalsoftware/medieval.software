@@ -12,7 +12,7 @@
 
 	const W = 200;
 	const H = 200;
-	const TANGENT_RADIUS = 50;
+	const TANGENT_RADIUS = 25;
 	const REMOVE_DISTANCE = 30;
 
 
@@ -29,23 +29,8 @@
 
 	let svgScale = 1; // viewBox units per CSS pixel
 
-	function updateScale() {
-		if (!svg) return;
-		let rect = svg.getBoundingClientRect();
-		svgScale = rect.width > 0 ? W / rect.width : 1;
-	}
-
-	function measureAction(node) {
-		svgScale = W / (node.getBoundingClientRect().width || W);
-		let ro = new ResizeObserver(() => {
-			svgScale = W / (node.getBoundingClientRect().width || W);
-		});
-		ro.observe(node);
-		return { destroy: () => ro.disconnect() };
-	}
-
 	// Desired sizes in CSS pixels
-	const PX_POINT = 5;
+	const PX_POINT = 4;
 	const PX_HANDLE = 4;
 	const PX_HIT = 14;
 
@@ -375,6 +360,14 @@
 		let hit = hitTestPoint(sx, sy, PX_HIT * svgScale);
 		if (hit >= 0) { selected = hit; return; }
 
+		selected = -1;
+	}
+
+	function onSvgDblClick(e) {
+		const { x: sx, y: sy } = svgCoords(e);
+		let hit = hitTestPoint(sx, sy, PX_HIT * svgScale);
+		if (hit >= 0) return;
+
 		const { x, y } = toNorm(sx, sy);
 		addKeyframe(x, y);
 	}
@@ -539,11 +532,20 @@
 	}
 
 	$: segments = segmentPaths(points);
+
+	function measureAction(node) {
+		svgScale = W / (node.getBoundingClientRect().width || W);
+		let ro = new ResizeObserver(() => {
+			svgScale = W / (node.getBoundingClientRect().width || W);
+		});
+		ro.observe(node);
+		return { destroy: () => ro.disconnect() };
+	}
 </script>
 
 <svelte:window on:click={closeContextMenu} on:keydown={onKeyDown} />
 
-<div class="curve-editor" style="--accent: var(--{color}); --accent-dim: var(--{color}-dim)">
+<div class="curve-editor" style="--accent: var(--{color}); --accent-dim: var(--{color}-dim)" on:click|stopPropagation>
 	<div class="curve-toolbar">
 		<div class="curve-preset-wrap">
 			<button class="curve-preset-btn" on:click|stopPropagation={() => presetOpen = !presetOpen}>
@@ -571,6 +573,7 @@
 		on:pointerup={onPointerUp}
 		on:lostpointercapture={onPointerUp}
 		on:click={onSvgClick}
+		on:dblclick={onSvgDblClick}
 		on:contextmenu={onContextMenu}
 		tabindex="0"
 	>

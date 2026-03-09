@@ -1,6 +1,8 @@
 <script>
 	/** @type {number} angle in degrees */
 	export let angle = 0;
+	/** @type {number|null} snap interval in degrees (null to disable) */
+	export let snap = 15;
 
 	let pad;
 	let dragging = false;
@@ -11,7 +13,7 @@
 		const cy = rect.top + rect.height / 2;
 		let deg = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
 		deg = ((deg % 360) + 360) % 360;
-		if (e.shiftKey) deg = Math.round(deg / 15) * 15;
+		if (e.shiftKey && snap) deg = Math.round(deg / snap) * snap;
 		angle = deg;
 	}
 
