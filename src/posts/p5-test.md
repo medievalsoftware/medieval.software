@@ -18,6 +18,7 @@ import CurveEditor from '$lib/components/CurveEditor.svelte';
 import Dropdown from '$lib/components/Dropdown.svelte';
 import Waveform from '$lib/components/Waveform.svelte';
 import FlameChart from '$lib/components/FlameChart.svelte';
+import Sparkline from '$lib/components/Sparkline.svelte';
 
 import Prop from '$lib/components/Prop.svelte';
 import { loadProps, saveProps } from '$lib/persist.js';
@@ -73,6 +74,14 @@ let flameData = {
 	]
 };
 let flameSearch = '';
+
+// -- Sparkline demos --
+let sparkA = Array.from({ length: 200 }, (_, i) => Math.sin(i * 0.08) * 0.4 + Math.random() * 0.2 + 0.5);
+let sparkB = Array.from({ length: 100 }, (_, i) => Math.pow(Math.sin(i * 0.05), 2) + Math.random() * 0.1);
+let sparkC = Array.from({ length: 150 }, (_, i) => {
+	let t = i / 150;
+	return t * 0.6 + Math.sin(i * 0.15) * 0.15 + Math.random() * 0.05;
+});
 
 // -- Number input demos --
 let unboundVal = 42;
@@ -735,6 +744,21 @@ Test page for visualization tools and interactive components.
 </div>
 
 <FlameChart root={flameData} height={200} search={flameSearch} />
+
+
+# Sparklines
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
+  <div style="background:var(--bg1);border:1px dashed var(--bg3);border-radius:var(--radius);padding:0.4rem">
+    <Sparkline data={sparkA} height={40} color="var(--aqua)" min={0} max={1} hover />
+  </div>
+  <div style="background:var(--bg1);border:1px dashed var(--bg3);border-radius:var(--radius);padding:0.4rem">
+    <Sparkline data={sparkB} height={40} color="var(--purple)" min={0} max={1.2} hover />
+  </div>
+  <div style="background:var(--bg1);border:1px dashed var(--bg3);border-radius:var(--radius);padding:0.4rem">
+    <Sparkline data={sparkC} height={40} color="var(--orange)" min={0} max={1} hover />
+  </div>
+</div>
 
 
 # Number Inputs

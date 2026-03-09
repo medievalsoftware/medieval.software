@@ -15,9 +15,9 @@
 - **Dropdown** — styled select replacement
 - **Prop** — labeled property row with dirty tracking and reset
 - **FlameChart** — stacked horizontal bars for profiling/timing data, canvas with zoom/pan, descending icicle layout, click-to-zoom, search/highlight, hover tooltips
+- **Sparkline** — minimal inline chart, filled envelope or stroke, no interaction (canvas)
 
 ### Planned
-- **Sparkline** — minimal inline chart (subset of Waveform: fixed viewport, no interaction, just the filled envelope)
 - **Histogram** — distribution bars, probably canvas
 
 ### Future
