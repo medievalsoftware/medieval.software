@@ -808,6 +808,19 @@
 		const { default: p5 } = await import('p5');
 		instance = new p5(buildSketch(events, spans, title), container);
 
+		// p5.js may register touch listeners as passive, which prevents
+		// preventDefault() from working. Add non-passive listeners to ensure
+		// pinch-zoom is handled by JS, not the browser.
+		let cv = container.querySelector('canvas');
+		if (cv) {
+			cv.addEventListener('touchstart', (e) => {
+				if (e.touches.length === 2) e.preventDefault();
+			}, { passive: false });
+			cv.addEventListener('touchmove', (e) => {
+				if (e.touches.length === 2) e.preventDefault();
+			}, { passive: false });
+		}
+
 		// Re-read theme on color scheme change
 		const mql = window.matchMedia('(prefers-color-scheme: dark)');
 		const handler = () => {

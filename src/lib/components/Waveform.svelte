@@ -669,6 +669,10 @@
 		window.addEventListener('resize', resize);
 		window.addEventListener('mousemove', onMouseMove);
 		window.addEventListener('mouseup', onMouseUp);
+		// Must be non-passive so preventDefault() works for pinch-zoom
+		canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+		canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+		canvas.addEventListener('touchend', onTouchEnd);
 	});
 
 	onDestroy(() => {
@@ -677,6 +681,9 @@
 			window.removeEventListener('resize', resize);
 			window.removeEventListener('mousemove', onMouseMove);
 			window.removeEventListener('mouseup', onMouseUp);
+			canvas.removeEventListener('touchstart', onTouchStart);
+			canvas.removeEventListener('touchmove', onTouchMove);
+			canvas.removeEventListener('touchend', onTouchEnd);
 		}
 	});
 </script>
@@ -685,9 +692,6 @@
 	bind:this={canvas}
 	on:wheel={onWheel}
 	on:mousedown={onMouseDown}
-	on:touchstart={onTouchStart}
-	on:touchmove={onTouchMove}
-	on:touchend={onTouchEnd}
 	on:mousemove={onCanvasMouseMove}
 	on:mouseleave={onCanvasMouseLeave}
 	class="waveform"

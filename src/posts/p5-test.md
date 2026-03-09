@@ -1,5 +1,5 @@
 ---
-title: p5.js Test
+title: Components Test
 date: '17 February 2026'
 publish: true
 icon: /category/test.png
@@ -11,12 +11,13 @@ import Timeline from '$lib/components/Timeline.svelte';
 import PositionPad from '$lib/components/PositionPad.svelte';
 import AnglePicker from '$lib/components/AnglePicker.svelte';
 import NumberInput from '$lib/components/NumberInput.svelte';
-import RangeSlider from '$lib/components/RangeSlider.svelte';
+import Slider from '$lib/components/Slider.svelte';
 import VecInput from '$lib/components/VecInput.svelte';
 import GradientEditor from '$lib/components/GradientEditor.svelte';
 import CurveEditor from '$lib/components/CurveEditor.svelte';
 import Dropdown from '$lib/components/Dropdown.svelte';
 import Waveform from '$lib/components/Waveform.svelte';
+import FlameChart from '$lib/components/FlameChart.svelte';
 
 import Prop from '$lib/components/Prop.svelte';
 import { loadProps, saveProps } from '$lib/persist.js';
@@ -38,6 +39,44 @@ let waveformData = new Float32Array(44100 * 3); // 3 seconds at 44.1kHz
 		waveformData[i] = (sig * env + noise) * 0.4;
 	}
 }
+
+// -- Flame chart demo --
+let flameData = {
+	name: 'main', value: 1000, children: [
+		{ name: 'render', value: 600, children: [
+			{ name: 'layout', value: 200, children: [
+				{ name: 'measure', value: 120 },
+				{ name: 'position', value: 80 },
+			]},
+			{ name: 'paint', value: 300, children: [
+				{ name: 'drawRects', value: 150 },
+				{ name: 'drawText', value: 100 },
+				{ name: 'drawImages', value: 50 },
+			]},
+			{ name: 'composite', value: 100 },
+		]},
+		{ name: 'update', value: 250, children: [
+			{ name: 'diffTree', value: 150, children: [
+				{ name: 'compareNodes', value: 90 },
+				{ name: 'patchDOM', value: 60 },
+			]},
+			{ name: 'runEffects', value: 100, children: [
+				{ name: 'useEffect', value: 60 },
+				{ name: 'useMemo', value: 40 },
+			]},
+		]},
+		{ name: 'gc', value: 80, children: [
+			{ name: 'markSweep', value: 50 },
+			{ name: 'compact', value: 30 },
+		]},
+		{ name: 'idle', value: 70 },
+	]
+};
+let flameSearch = '';
+
+// -- Number input demos --
+let unboundVal = 42;
+let boundVal = 50;
 
 // -- Helpers --
 function canvasBg(canvas) {
@@ -689,6 +728,22 @@ Test page for visualization tools and interactive components.
 />
 
 
+# Flame Chart
+
+<div style="margin-bottom:0.5rem">
+  <input type="text" bind:value={flameSearch} placeholder="Search functions..." style="background:var(--bg_h);color:var(--fg);border:1px solid var(--bg3);border-radius:var(--radius);padding:0.3rem 0.5rem;font-family:inherit;font-size:0.85rem;width:14rem" />
+</div>
+
+<FlameChart root={flameData} height={200} search={flameSearch} />
+
+
+# Number Inputs
+
+<div style="display:flex;flex-direction:column;gap:0.15rem;padding:0.5rem;background:var(--bg1);border:1px dashed var(--bg3);border-radius:var(--radius)">
+  <Prop name="Unbound" tip="No min/max, free value"><NumberInput bind:value={unboundVal} label="X" color="blue" precision={1} sensitivity={0.5} /></Prop>
+  <Prop name="Bounded" tip="Has min and max, shows slider"><NumberInput bind:value={boundVal} label="Y" color="aqua" min={0} max={100} precision={0} sensitivity={1} /></Prop>
+</div>
+
 
 # Particle Emitter
 
@@ -762,7 +817,7 @@ Test page for visualization tools and interactive components.
       { value: 'bars', label: 'Bars' },
     ]} />
   </Prop>
-  <Prop name="Height" tip="Min and max terrain height range" value={[heightLow, heightHigh]} default={[20, 80]} reset={() => { heightLow = 20; heightHigh = 80 }}><RangeSlider bind:low={heightLow} bind:high={heightHigh} min={0} max={100} step={1} color="aqua" /></Prop>
+  <Prop name="Height" tip="Min and max terrain height range" value={[heightLow, heightHigh]} default={[20, 80]} reset={() => { heightLow = 20; heightHigh = 80 }}><Slider bind:value={heightLow} bind:high={heightHigh} min={0} max={100} step={1} color="aqua" /></Prop>
   <Prop name="Scale" tip="Perlin noise frequency — higher is bumpier" bind:value={noiseScale} default={0.012}><NumberInput bind:value={noiseScale} label="f" color="orange" min={0.001} max={0.05} precision={3} sensitivity={0.0002} /></Prop>
   <Prop name="Speed" tip="Horizontal scroll rate" bind:value={scrollSpeed} default={0.8}><NumberInput bind:value={scrollSpeed} label="f" color="orange" min={0} max={5} precision={1} sensitivity={0.05} /></Prop>
   <Prop name="Layers" tip="Parallax depth layers" bind:value={terrainLayers} default={3}><NumberInput bind:value={terrainLayers} label="i" color="blue" min={1} max={6} precision={0} sensitivity={0.3} /></Prop>
@@ -807,7 +862,7 @@ Test page for visualization tools and interactive components.
     <Prop name="Separation" tip="Steer away from nearby boids" bind:value={boidSep} default={1.5}><NumberInput bind:value={boidSep} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
     <Prop name="Alignment" tip="Match heading of neighbors" bind:value={boidAli} default={1.0}><NumberInput bind:value={boidAli} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
     <Prop name="Cohesion" tip="Steer toward flock center" bind:value={boidCoh} default={1.0}><NumberInput bind:value={boidCoh} label="f" color="orange" min={0} max={5} precision={2} sensitivity={0.05} /></Prop>
-    <Prop name="Perception" tip="Near radius for separation, far for alignment and cohesion" value={[percNear, percFar]} default={[25, 75]} reset={() => { percNear = 25; percFar = 75 }}><RangeSlider bind:low={percNear} bind:high={percFar} min={5} max={100} step={1} color="aqua" /></Prop>
+    <Prop name="Perception" tip="Near radius for separation, far for alignment and cohesion" value={[percNear, percFar]} default={[25, 75]} reset={() => { percNear = 25; percFar = 75 }}><Slider bind:value={percNear} bind:high={percFar} min={5} max={100} step={1} color="aqua" /></Prop>
   {/if}
   {#if btab === 'forces'}
     <Prop name="Wind" tip="Global directional force on all boids" value={[windAngle, windStrength]} default={[0, 0]} reset={() => { windAngle = 0; windStrength = 0 }}><div class="p5-inline" style="align-items:center;padding:0;border:none"><AnglePicker bind:angle={windAngle} style="width:3.5em" /><NumberInput bind:value={windStrength} label="f" color="orange" min={0} max={0.5} precision={3} sensitivity={0.005} /></div></Prop>
