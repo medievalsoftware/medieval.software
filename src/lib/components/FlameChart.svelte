@@ -63,8 +63,8 @@
 
 	// Inertia (Apple UIScrollView.DecelerationRate.normal = 0.998/ms)
 	let velocity = 0;
-	let lastTouchX = 0;
-	let lastTouchTime = 0;
+	let lastDragX = 0;
+	let lastDragTime = 0;
 	let lastFrameTime = 0;
 	const decayRate = 0.998;
 
@@ -313,16 +313,30 @@
 		return -1;
 	}
 
+	// --- Scroll hint ---
+	let scrollHint = false;
+	let scrollHintTimer;
+
+	function showScrollHint() {
+		clearTimeout(scrollHintTimer);
+		scrollHint = true;
+		scrollHintTimer = setTimeout(() => { scrollHint = false; }, 1500);
+	}
+
 	// --- Input handlers ---
 
 	function onWheel(e) {
+		if (!(e.ctrlKey || e.metaKey)) {
+			showScrollHint();
+			return;
+		}
+
 		e.preventDefault();
+		let dx = e.deltaX || 0;
+		let dy = e.deltaY || 0;
 		let rect = canvas.getBoundingClientRect();
 		let mx = e.clientX - rect.left;
 		let frac = mx / w;
-
-		let dx = e.deltaX || 0;
-		let dy = e.deltaY || 0;
 		let span = targetEnd - targetStart;
 
 		// Horizontal: pan
@@ -348,6 +362,9 @@
 		dragStartX = e.clientX;
 		dragStartView = viewStart;
 		dragMoved = false;
+		velocity = 0;
+		lastDragX = e.clientX;
+		lastDragTime = performance.now();
 	}
 
 	function onMouseMove(e) {
@@ -363,6 +380,16 @@
 		let dx = e.clientX - dragStartX;
 		if (Math.abs(dx) > dragThreshold) dragMoved = true;
 		if (dragMoved) {
+			let now = performance.now();
+			let dt = now - lastDragTime;
+			if (dt > 0) {
+				let span = viewEnd - viewStart;
+				let dxPx = e.clientX - lastDragX;
+				velocity = -(dxPx / w) * span / dt;
+			}
+			lastDragX = e.clientX;
+			lastDragTime = now;
+
 			let span = viewEnd - viewStart;
 			let shift = -(dx / w) * span;
 			targetStart = dragStartView + shift;
@@ -395,6 +422,7 @@
 				dirty = true;
 			}
 		}
+		if (isDragging && performance.now() - lastDragTime > 60) velocity = 0;
 		isDragging = false;
 	}
 
@@ -449,8 +477,8 @@
 			dragStartView = viewStart;
 			dragMoved = false;
 			velocity = 0;
-			lastTouchX = t.clientX;
-			lastTouchTime = performance.now();
+			lastDragX = t.clientX;
+			lastDragTime = performance.now();
 		}
 	}
 
@@ -487,14 +515,14 @@
 			if (touchLocked === 'pan') {
 				e.preventDefault();
 				let now = performance.now();
-				let dt = now - lastTouchTime;
+				let dt = now - lastDragTime;
 				if (dt > 0) {
 					let span = viewEnd - viewStart;
-					let dxPx = t.clientX - lastTouchX;
+					let dxPx = t.clientX - lastDragX;
 					velocity = -(dxPx / w) * span / dt;
 				}
-				lastTouchX = t.clientX;
-				lastTouchTime = now;
+				lastDragX = t.clientX;
+				lastDragTime = now;
 
 				let dx = t.clientX - dragStartX;
 				if (Math.abs(dx) > dragThreshold) dragMoved = true;
@@ -517,7 +545,7 @@
 
 	function onTouchEnd() {
 		// Kill velocity if the touch was stale (finger stopped before lifting)
-		if (performance.now() - lastTouchTime > 60) velocity = 0;
+		if (performance.now() - lastDragTime > 60) velocity = 0;
 		isDragging = false;
 		touchStartPos = null;
 		touchLocked = null;
@@ -572,16 +600,27 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<canvas
-	bind:this={canvas}
-	on:mousedown={onMouseDown}
-	on:mouseenter={onMouseEnter}
-	on:mouseleave={onMouseLeave}
-	class="flame-chart"
-	class:dragging={isDragging && dragMoved}
-></canvas>
+<div class="canvas-wrap">
+	<canvas
+		bind:this={canvas}
+		on:mousedown={onMouseDown}
+		on:mouseenter={onMouseEnter}
+		on:mouseleave={onMouseLeave}
+		class="flame-chart"
+		class:dragging={isDragging && dragMoved}
+	></canvas>
+	{#if scrollHint}
+		<div class="scroll-hint" class:visible={scrollHint}>
+			<kbd>Ctrl</kbd> + scroll to zoom
+		</div>
+	{/if}
+</div>
 
 <style>
+	.canvas-wrap {
+		position: relative;
+	}
+
 	.flame-chart {
 		display: block;
 		width: 100%;
@@ -593,5 +632,33 @@
 
 	.flame-chart.dragging {
 		cursor: grabbing;
+	}
+
+	.scroll-hint {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		background: rgba(0, 0, 0, 0.75);
+		color: #ebdbb2;
+		font-size: 0.8rem;
+		padding: 0.4rem 0.8rem;
+		border-radius: 0.4rem;
+		pointer-events: none;
+		animation: hint-fade 1.5s ease-out forwards;
+		white-space: nowrap;
+	}
+
+	.scroll-hint kbd {
+		background: rgba(255, 255, 255, 0.15);
+		padding: 0.1rem 0.35rem;
+		border-radius: 0.2rem;
+		font-family: inherit;
+		font-size: 0.85em;
+	}
+
+	@keyframes hint-fade {
+		0%, 60% { opacity: 1; }
+		100% { opacity: 0; }
 	}
 </style>

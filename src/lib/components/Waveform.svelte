@@ -60,8 +60,8 @@
 
 	// Inertia (Apple UIScrollView.DecelerationRate.normal = 0.998/ms)
 	let velocity = 0;
-	let lastTouchX = 0;
-	let lastTouchTime = 0;
+	let lastDragX = 0;
+	let lastDragTime = 0;
 	let lastFrameTime = 0;
 	const decayRate = 0.998;
 
@@ -428,15 +428,29 @@
 		minSpan = data.length > 0 ? Math.min(0.001, 20 / data.length) : 0.001;
 	}
 
+	// --- Scroll hint ---
+	let scrollHint = false;
+	let scrollHintTimer;
+
+	function showScrollHint() {
+		clearTimeout(scrollHintTimer);
+		scrollHint = true;
+		scrollHintTimer = setTimeout(() => { scrollHint = false; }, 1500);
+	}
+
 	function onWheel(e) {
+		if (!(e.ctrlKey || e.metaKey)) {
+			showScrollHint();
+			return;
+		}
+
 		e.preventDefault();
+		let dx = e.deltaX || 0;
+		let dy = e.deltaY || 0;
 		let rect = canvas.getBoundingClientRect();
 		let mx = e.clientX - rect.left - marginLeft;
 		let pw = plotW || (w - marginLeft);
 		let frac = Math.max(0, Math.min(1, mx / pw));
-
-		let dx = e.deltaX || 0;
-		let dy = e.deltaY || 0;
 		let span = targetEnd - targetStart;
 
 		// Horizontal: pan
@@ -510,6 +524,9 @@
 		dragStartView = viewStart;
 		dragMoved = false;
 		selDragStart = clientXToSample(e.clientX);
+		velocity = 0;
+		lastDragX = e.clientX;
+		lastDragTime = performance.now();
 	}
 
 	function onMouseMove(e) {
@@ -538,7 +555,17 @@
 		let dx = e.clientX - dragStartX;
 		if (Math.abs(dx) > dragThreshold) dragMoved = true;
 		if (dragMoved) {
+			let now = performance.now();
+			let dt = now - lastDragTime;
 			let pw = plotW || (w - marginLeft);
+			if (dt > 0) {
+				let span = viewEnd - viewStart;
+				let dxPx = e.clientX - lastDragX;
+				velocity = -(dxPx / pw) * span / dt;
+			}
+			lastDragX = e.clientX;
+			lastDragTime = now;
+
 			let span = viewEnd - viewStart;
 			let shift = -(dx / pw) * span;
 			targetStart = dragStartView + shift;
@@ -600,6 +627,7 @@
 			selection = null;
 			dirty = true;
 		}
+		if (isDragging && performance.now() - lastDragTime > 60) velocity = 0;
 		isDragging = false;
 	}
 
@@ -628,8 +656,8 @@
 			dragStartView = viewStart;
 			dragMoved = false;
 			velocity = 0;
-			lastTouchX = t.clientX;
-			lastTouchTime = performance.now();
+			lastDragX = t.clientX;
+			lastDragTime = performance.now();
 		}
 	}
 
@@ -665,15 +693,15 @@
 			if (touchLocked === 'pan') {
 				e.preventDefault();
 				let now = performance.now();
-				let dt = now - lastTouchTime;
+				let dt = now - lastDragTime;
 				if (dt > 0) {
 					let pw = plotW || (w - marginLeft);
 					let span = viewEnd - viewStart;
-					let dxPx = t.clientX - lastTouchX;
+					let dxPx = t.clientX - lastDragX;
 					velocity = -(dxPx / pw) * span / dt;
 				}
-				lastTouchX = t.clientX;
-				lastTouchTime = now;
+				lastDragX = t.clientX;
+				lastDragTime = now;
 
 				let dx = t.clientX - dragStartX;
 				if (Math.abs(dx) > dragThreshold) dragMoved = true;
@@ -697,7 +725,7 @@
 
 	function onTouchEnd() {
 		// Kill velocity if the touch was stale (finger stopped before lifting)
-		if (performance.now() - lastTouchTime > 60) velocity = 0;
+		if (performance.now() - lastDragTime > 60) velocity = 0;
 		isDragging = false;
 		touchStartPos = null;
 		touchLocked = null;
@@ -710,6 +738,7 @@
 		window.addEventListener('resize', resize);
 		window.addEventListener('mousemove', onMouseMove);
 		window.addEventListener('mouseup', onMouseUp);
+		canvas.addEventListener('wheel', onWheel, { passive: false });
 		// Must be non-passive so preventDefault() works for pinch-zoom
 		canvas.addEventListener('touchstart', onTouchStart, { passive: false });
 		canvas.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -722,6 +751,7 @@
 			window.removeEventListener('resize', resize);
 			window.removeEventListener('mousemove', onMouseMove);
 			window.removeEventListener('mouseup', onMouseUp);
+			canvas.removeEventListener('wheel', onWheel);
 			canvas.removeEventListener('touchstart', onTouchStart);
 			canvas.removeEventListener('touchmove', onTouchMove);
 			canvas.removeEventListener('touchend', onTouchEnd);
@@ -729,9 +759,9 @@
 	});
 </script>
 
+<div class="canvas-wrap">
 <canvas
 	bind:this={canvas}
-	on:wheel={onWheel}
 	on:mousedown={onMouseDown}
 	on:mousemove={onCanvasMouseMove}
 	on:mouseleave={onCanvasMouseLeave}
@@ -740,8 +770,17 @@
 	class:selecting={isSelecting}
 	class:edge-drag={selEdgeDrag !== null}
 ></canvas>
+{#if scrollHint}
+	<div class="scroll-hint" class:visible={scrollHint}>
+		<kbd>Ctrl</kbd> + scroll to zoom
+	</div>
+{/if}
+</div>
 
 <style>
+	.canvas-wrap {
+		position: relative;
+	}
 	.waveform {
 		display: block;
 		width: 100%;
@@ -763,5 +802,33 @@
 
 	.waveform.edge-drag {
 		cursor: ew-resize;
+	}
+
+	.scroll-hint {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		background: rgba(0, 0, 0, 0.75);
+		color: #ebdbb2;
+		font-size: 0.8rem;
+		padding: 0.4rem 0.8rem;
+		border-radius: 0.4rem;
+		pointer-events: none;
+		animation: hint-fade 1.5s ease-out forwards;
+		white-space: nowrap;
+	}
+
+	.scroll-hint kbd {
+		background: rgba(255, 255, 255, 0.15);
+		padding: 0.1rem 0.35rem;
+		border-radius: 0.2rem;
+		font-family: inherit;
+		font-size: 0.85em;
+	}
+
+	@keyframes hint-fade {
+		0%, 60% { opacity: 1; }
+		100% { opacity: 0; }
 	}
 </style>
