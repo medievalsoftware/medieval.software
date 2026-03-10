@@ -115,13 +115,12 @@
 
 	function resize() {
 		if (!canvas) return;
-		let rect = canvas.parentElement.getBoundingClientRect();
+		let rect = canvas.getBoundingClientRect();
 		dpr = window.devicePixelRatio || 1;
 		w = rect.width;
 		h = Math.max(height, (maxDepth + 1) * rowHeight + 4);
 		canvas.width = w * dpr;
 		canvas.height = h * dpr;
-		canvas.style.width = w + 'px';
 		canvas.style.height = h + 'px';
 		resolveColors();
 		dirty = true;
