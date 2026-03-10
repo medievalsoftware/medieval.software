@@ -77,6 +77,14 @@
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-round: 50%;
+
+  --floating-bg: var(--bg1);
+  --floating-text: var(--fg2);
+  --floating-text-dim: var(--fg4);
+  --floating-border: var(--bg3);
+  --floating-radius: var(--radius);
+  --floating-arrow: 5px;
+  --floating-z: 10000;
 }
 
 .red {

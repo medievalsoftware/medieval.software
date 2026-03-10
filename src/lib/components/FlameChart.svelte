@@ -53,6 +53,7 @@
 	let dragMoved = false;
 	const dragThreshold = 4;
 	let hoveredIdx = -1;
+	let mouseX = 0, mouseY = 0;
 	let zoomedBar = -1;
 
 	// Touch
@@ -264,25 +265,24 @@
 			let tipW = Math.max(...lines.map(l => ctx.measureText(l).width)) + padX * 2;
 			let tipH = lines.length * lineH + padY * 2;
 
-			// Position near hovered bar
-			let bx = ((bar.startFrac - viewStart) / span) * w;
-			let by = bar.depth * rowHeight + rowHeight + 4;
-			let tx = Math.max(2, Math.min(w - tipW - 2, bx));
-			if (by + tipH > h) by = bar.depth * rowHeight - tipH - 4;
+			// Position following cursor
+			let tx = Math.max(2, Math.min(w - tipW - 2, mouseX + 12));
+			let ty = mouseY + 16;
+			if (ty + tipH > h) ty = mouseY - tipH - 8;
 
 			ctx.fillStyle = bgColor;
 			ctx.globalAlpha = 0.92;
-			ctx.fillRect(tx, by, tipW, tipH);
+			ctx.fillRect(tx, ty, tipW, tipH);
 			ctx.globalAlpha = 1;
 			ctx.strokeStyle = bg3Color;
 			ctx.lineWidth = 1;
-			ctx.strokeRect(tx, by, tipW, tipH);
+			ctx.strokeRect(tx, ty, tipW, tipH);
 
 			ctx.fillStyle = fgColor;
 			ctx.textBaseline = 'top';
 			for (let li = 0; li < lines.length; li++) {
 				ctx.fillStyle = li === 0 ? fgColor : fg4Color;
-				ctx.fillText(lines[li], tx + padX, by + padY + li * lineH);
+				ctx.fillText(lines[li], tx + padX, ty + padY + li * lineH);
 			}
 		}
 
@@ -351,13 +351,17 @@
 	}
 
 	function onMouseMove(e) {
+		let rect = canvas.getBoundingClientRect();
+		mouseX = e.clientX - rect.left;
+		mouseY = e.clientY - rect.top;
+
 		// Hit-test for hover
 		let idx = hitTest(e.clientX, e.clientY);
 		if (idx !== hoveredIdx) {
 			hoveredIdx = idx;
-			dirty = true;
 			canvas.style.cursor = idx >= 0 ? 'pointer' : 'grab';
 		}
+		if (hoveredIdx >= 0) dirty = true;
 
 		if (!isDragging) return;
 		let dx = e.clientX - dragStartX;

@@ -1,0 +1,84 @@
+/* Shared floating element styles (tooltip action + Popover component) */
+
+.floating-tooltip {
+	position: fixed;
+	z-index: var(--floating-z);
+	background: var(--floating-bg);
+	color: var(--floating-text);
+	border: 1px solid var(--floating-border);
+	border-radius: var(--floating-radius);
+	font-size: 0.75rem;
+	line-height: 1.4;
+	padding: 0.3rem 0.5rem;
+	max-width: 200px;
+	width: max-content;
+	white-space: normal;
+	pointer-events: none;
+	animation: floating-in 0.12s ease-out;
+}
+
+/* Arrow — shared by tooltip and popover */
+
+.floating-arrow {
+	position: absolute;
+	width: 0;
+	height: 0;
+	border: var(--floating-arrow) solid transparent;
+}
+
+.floating-arrow[data-side="bottom"] {
+	top: calc(-1 * var(--floating-arrow) * 2);
+	border-bottom-color: var(--floating-border);
+}
+.floating-arrow[data-side="bottom"]::after {
+	content: '';
+	position: absolute;
+	top: calc(-1 * var(--floating-arrow) + 1px);
+	left: calc(-1 * var(--floating-arrow));
+	border: var(--floating-arrow) solid transparent;
+	border-bottom-color: var(--floating-bg);
+}
+
+.floating-arrow[data-side="top"] {
+	bottom: calc(-1 * var(--floating-arrow) * 2);
+	border-top-color: var(--floating-border);
+}
+.floating-arrow[data-side="top"]::after {
+	content: '';
+	position: absolute;
+	bottom: calc(-1 * var(--floating-arrow) + 1px);
+	left: calc(-1 * var(--floating-arrow));
+	border: var(--floating-arrow) solid transparent;
+	border-top-color: var(--floating-bg);
+}
+
+.floating-arrow[data-side="right"] {
+	left: calc(-1 * var(--floating-arrow) * 2);
+	border-right-color: var(--floating-border);
+}
+.floating-arrow[data-side="right"]::after {
+	content: '';
+	position: absolute;
+	left: calc(-1 * var(--floating-arrow) + 1px);
+	top: calc(-1 * var(--floating-arrow));
+	border: var(--floating-arrow) solid transparent;
+	border-right-color: var(--floating-bg);
+}
+
+.floating-arrow[data-side="left"] {
+	right: calc(-1 * var(--floating-arrow) * 2);
+	border-left-color: var(--floating-border);
+}
+.floating-arrow[data-side="left"]::after {
+	content: '';
+	position: absolute;
+	right: calc(-1 * var(--floating-arrow) + 1px);
+	top: calc(-1 * var(--floating-arrow));
+	border: var(--floating-arrow) solid transparent;
+	border-left-color: var(--floating-bg);
+}
+
+@keyframes floating-in {
+	from { opacity: 0; transform: translateY(-2px); }
+	to { opacity: 1; transform: translateY(0); }
+}

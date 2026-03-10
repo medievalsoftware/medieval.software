@@ -1,6 +1,6 @@
 <script>
 	import { onDestroy, getContext } from 'svelte';
-	import { portal, clampToViewport } from '$lib/actions.js';
+	import { tooltip } from '$lib/tooltip.js';
 
 	/** @type {string} */
 	export let name;
@@ -13,32 +13,6 @@
 	export let reset = undefined;
 	/** @type {string} */
 	export let tip = '';
-
-	let tipVisible = false;
-	let tipTimer;
-	let tipPos = { top: 0, left: 0 };
-
-	function updateTipPos(e) {
-		const rect = e.currentTarget.getBoundingClientRect();
-		tipPos = { top: rect.bottom + 4, left: rect.left };
-	}
-
-	function showTip(e) {
-		clearTimeout(tipTimer);
-		updateTipPos(e);
-		tipTimer = setTimeout(() => { tipVisible = true; }, 400);
-	}
-
-	function hideTip() {
-		clearTimeout(tipTimer);
-		tipVisible = false;
-	}
-
-	function clickTip(e) {
-		clearTimeout(tipTimer);
-		updateTipPos(e);
-		tipVisible = true;
-	}
 
 	const resetAllSignal = getContext('p5-reset-all');
 	const dirtyCount = getContext('p5-dirty-count');
@@ -53,7 +27,6 @@
 	let wasDirty = false;
 
 	onDestroy(() => {
-		clearTimeout(tipTimer);
 		unsub?.();
 		if (wasDirty) dirtyCount?.update(n => n - 1);
 	});
@@ -79,13 +52,11 @@
 	<span
 		class="prop-name"
 		class:has-tip={tip}
-		on:mouseenter={tip ? showTip : undefined}
-		on:mouseleave={tip ? hideTip : undefined}
-		on:click={tip ? clickTip : undefined}
+		use:tooltip={{ text: tip, placement: 'bottom', delay: 400 }}
 	>
 		{name}
 		{#if dirty}
-			<button class="prop-reset" on:click|preventDefault|stopPropagation={doReset} title="Reset to default">
+			<button class="prop-reset" on:click|preventDefault|stopPropagation={doReset} use:tooltip={"Reset to default"}>
 				<svg viewBox="0 0 10 10" width="9" height="9">
 					<path d="M2 3.5 A3.2 3.2 0 1 1 3 8" stroke="currentColor" stroke-width="1.4" fill="none"/>
 					<path d="M0.5 2 L2 4 L3.8 2.2" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
@@ -96,10 +67,6 @@
 	<slot />
 </div>
 
-{#if tipVisible && tip}
-	<span use:portal use:clampToViewport class="prop-tip" style="top:{tipPos.top}px;left:{tipPos.left}px">{tip}</span>
-{/if}
-
 <style>
 	.prop-name {
 		display: flex;
@@ -109,36 +76,6 @@
 
 	.prop-name.has-tip {
 		cursor: help;
-	}
-
-	:global(.prop-tip) {
-		position: fixed;
-		background: var(--bg1);
-		color: var(--fg2);
-		font-size: 0.75rem;
-		line-height: 1.4;
-		padding: 0.3rem 0.5rem;
-		border-radius: var(--radius);
-		white-space: normal;
-		width: max-content;
-		max-width: 200px;
-		z-index: 99999;
-		pointer-events: none;
-		animation: prop-tip-in 0.12s ease-out;
-	}
-
-	:global(.prop-tip::before) {
-		content: '';
-		position: absolute;
-		bottom: 100%;
-		left: 10px;
-		border: 4px solid transparent;
-		border-bottom-color: var(--bg1);
-	}
-
-	@keyframes -global-prop-tip-in {
-		from { opacity: 0; transform: translateY(-2px); }
-		to { opacity: 1; transform: translateY(0); }
 	}
 
 	.prop-reset {

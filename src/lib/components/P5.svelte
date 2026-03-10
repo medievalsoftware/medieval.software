@@ -1,7 +1,8 @@
 <script>
 	import { onMount, onDestroy, setContext } from 'svelte';
 	import { writable } from 'svelte/store';
-	import { portal } from '$lib/actions.js';
+	import { tooltip } from '$lib/tooltip.js';
+	import Popover from './Popover.svelte';
 
 	/** @type {(p: import('p5')) => void} */
 	export let sketch;
@@ -15,38 +16,13 @@
 	let instance;
 	let overlayCorner = 0;
 	let overlayOpen = true;
-	let cornerPopover = false;
 	const cornerPaths = [
 		'M8 8L2 2M5 2L2 2L2 5',
 		'M2 8L8 2M5 2L8 2L8 5',
 		'M2 2L8 8M5 8L8 8L8 5',
 		'M8 2L2 8M5 8L2 8L2 5',
 	];
-
-	let popoverPos = { top: 0, left: 0 };
-
-	function togglePopover(e) {
-		cornerPopover = !cornerPopover;
-		if (cornerPopover) {
-			const rect = e.currentTarget.getBoundingClientRect();
-			popoverPos = { top: rect.bottom + 3, left: rect.left };
-		}
-	}
-
-	let popoverCloseTimer;
-
-	function schedulePopoverClose() {
-		if (!cornerPopover) return;
-		popoverCloseTimer = setTimeout(() => { cornerPopover = false; }, 120);
-	}
-
-	function cancelPopoverClose() {
-		clearTimeout(popoverCloseTimer);
-	}
-
-	function onWindowClick() {
-		cornerPopover = false;
-	}
+	let cornerPopoverOpen = false;
 
 	onMount(async () => {
 		const { default: p5 } = await import('p5');
@@ -59,8 +35,6 @@
 
 </script>
 
-<svelte:window on:click={onWindowClick} />
-
 <div class="p5-wrapper" {...$$restProps}>
 	<div class="p5-stage">
 		<div class="p5-canvas" bind:this={container}></div>
@@ -70,11 +44,9 @@
 				class:tr={overlayCorner === 1}
 				class:br={overlayCorner === 2}
 				class:bl={overlayCorner === 3}
-				on:mouseleave={schedulePopoverClose}
-				on:mouseenter={cancelPopoverClose}
 			>
 				<div class="p5-overlay-bar">
-					<button class="p5-overlay-btn" on:click={() => overlayOpen = !overlayOpen} title={overlayOpen ? 'Minimize' : 'Expand'}>
+					<button class="p5-overlay-btn" on:click={() => overlayOpen = !overlayOpen} use:tooltip={overlayOpen ? 'Minimize' : 'Expand'}>
 						<svg viewBox="0 0 10 10" width="10" height="10">
 							{#if overlayOpen}
 								<path d="M2 5h6" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -83,9 +55,18 @@
 							{/if}
 						</svg>
 					</button>
-					<button class="p5-overlay-btn" on:click|stopPropagation={togglePopover} title="Position">
-						<svg viewBox="0 0 10 10" width="10" height="10"><path d={cornerPaths[overlayCorner]} stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-					</button>
+					<Popover placement="bottom" bind:open={cornerPopoverOpen}>
+						<button slot="trigger" class="p5-overlay-btn" use:tooltip={"Position"}>
+							<svg viewBox="0 0 10 10" width="10" height="10"><path d={cornerPaths[overlayCorner]} stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+						</button>
+						<div class="p5-corner-grid">
+							{#each [0, 1, 3, 2] as c}
+								<button class="p5-corner-btn" class:active={overlayCorner === c} on:click={() => { overlayCorner = c; cornerPopoverOpen = false; }}>
+									<svg viewBox="0 0 10 10" width="10" height="10"><path d={cornerPaths[c]} stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+								</button>
+							{/each}
+						</div>
+					</Popover>
 				</div>
 				{#if overlayOpen}
 					<div class="p5-overlay-content">
@@ -99,7 +80,7 @@
 		<div class="p5-panel">
 			<div class="p5-panel-header">
 				<span>Properties</span>
-				<button class="p5-reset-all" class:visible={$dirtyCount > 0} on:click={() => resetAllSignal.update(n => n + 1)} title="Reset all to defaults">
+				<button class="p5-reset-all" class:visible={$dirtyCount > 0} on:click={() => resetAllSignal.update(n => n + 1)} use:tooltip={"Reset all to defaults"}>
 					<svg viewBox="0 0 10 10" width="10" height="10">
 						<path d="M2 3.5 A3.2 3.2 0 1 1 3 8" stroke="currentColor" stroke-width="1.4" fill="none"/>
 						<path d="M0.5 2 L2 4 L3.8 2.2" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
@@ -112,15 +93,6 @@
 		</div>
 	{/if}
 </div>
-{#if cornerPopover}
-	<div use:portal class="p5-corner-popover" style="position:fixed;z-index:99999;top:{popoverPos.top}px;left:{popoverPos.left}px" on:click|stopPropagation on:mouseenter={cancelPopoverClose} on:mouseleave={schedulePopoverClose}>
-		{#each [0, 1, 3, 2] as c}
-			<button class:active={overlayCorner === c} on:click={() => { overlayCorner = c; cornerPopover = false; }}>
-				<svg viewBox="0 0 10 10" width="10" height="10"><path d={cornerPaths[c]} stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-			</button>
-		{/each}
-	</div>
-{/if}
 
 <style>
 	.p5-wrapper {
@@ -187,19 +159,13 @@
 		padding: 0.2rem 0.25rem;
 	}
 
-	.p5-corner-popover {
-		position: fixed;
-		z-index: 99999;
+	.p5-corner-grid {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 1px;
-		padding: 3px;
-		background: var(--bg_h);
-		border: 1px solid var(--bg3);
-		border-radius: 4px;
 	}
 
-	.p5-corner-popover button {
+	.p5-corner-btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -210,19 +176,17 @@
 		border: none;
 		border-radius: var(--radius-sm);
 		color: var(--fg4);
-		font-size: 10px;
-		line-height: 1;
 		cursor: pointer;
 		opacity: 0.5;
 		transition: opacity 0.1s, background 0.1s;
 	}
 
-	.p5-corner-popover button:hover {
+	.p5-corner-btn:hover {
 		opacity: 1;
 		background: var(--bg2);
 	}
 
-	.p5-corner-popover button.active {
+	.p5-corner-btn.active {
 		opacity: 1;
 		background: var(--bg3);
 	}
