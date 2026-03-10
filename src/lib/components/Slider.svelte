@@ -35,7 +35,8 @@
 		if (isRange) {
 			let distLow = Math.abs(val - value);
 			let distHigh = Math.abs(val - high);
-			let handle = distLow <= distHigh ? 'low' : 'high';
+			let handle = distLow === distHigh ? (val >= value ? 'high' : 'low')
+				: distLow < distHigh ? 'low' : 'high';
 			dragging = handle;
 			track.setPointerCapture(e.pointerId);
 			if (handle === 'low') {
