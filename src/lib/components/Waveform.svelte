@@ -1,5 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import { createScrollHint, shouldBlockWheel, createInertia } from '../canvasInteraction.js';
+	import ScrollHint from './ScrollHint.svelte';
 
 	/** @type {Float32Array | number[]} */
 	export let data = [];
@@ -58,12 +60,10 @@
 	let touchStartPos = null;
 	let touchLocked = null;
 
-	// Inertia (Apple UIScrollView.DecelerationRate.normal = 0.998/ms)
-	let velocity = 0;
-	let lastDragX = 0;
-	let lastDragTime = 0;
-	let lastFrameTime = 0;
-	const decayRate = 0.998;
+	// Inertia & scroll hint
+	const inertia = createInertia();
+	const hint = createScrollHint();
+	const hintVisible = hint.visible;
 
 	function clientXToSample(clientX) {
 		let rect = canvas.getBoundingClientRect();
@@ -122,16 +122,12 @@
 		}
 
 		// Apply inertia
-		let now = performance.now();
-		let frameDt = lastFrameTime ? now - lastFrameTime : 16;
-		lastFrameTime = now;
-		if (Math.abs(velocity) > 0.000001) {
+		let inertiaDelta = inertia.applyFrame();
+		if (inertiaDelta) {
 			let span = targetEnd - targetStart;
-			targetStart += velocity * frameDt;
+			targetStart += inertiaDelta;
 			targetEnd = targetStart + span;
 			clampTarget();
-			velocity *= Math.pow(decayRate, frameDt);
-			if (Math.abs(velocity) < 0.000001) velocity = 0;
 		}
 
 		// Lerp viewport
@@ -140,7 +136,7 @@
 		let prevEnd = viewEnd;
 		viewStart += (targetStart - viewStart) * lerpAmt;
 		viewEnd += (targetEnd - viewEnd) * lerpAmt;
-		let animating = Math.abs(viewStart - targetStart) > 0.00001 || Math.abs(viewEnd - targetEnd) > 0.00001 || Math.abs(velocity) > 0.000001;
+		let animating = Math.abs(viewStart - targetStart) > 0.00001 || Math.abs(viewEnd - targetEnd) > 0.00001 || inertia.isMoving;
 		if (!animating) { viewStart = targetStart; viewEnd = targetEnd; }
 		clampView();
 
@@ -428,19 +424,9 @@
 		minSpan = data.length > 0 ? Math.min(0.001, 20 / data.length) : 0.001;
 	}
 
-	// --- Scroll hint ---
-	let scrollHint = false;
-	let scrollHintTimer;
-
-	function showScrollHint() {
-		clearTimeout(scrollHintTimer);
-		scrollHint = true;
-		scrollHintTimer = setTimeout(() => { scrollHint = false; }, 1500);
-	}
-
 	function onWheel(e) {
-		if (!(e.ctrlKey || e.metaKey)) {
-			showScrollHint();
+		if (shouldBlockWheel(e)) {
+			hint.show();
 			return;
 		}
 
@@ -471,7 +457,7 @@
 		}
 
 		clampTarget();
-		velocity = 0;
+		inertia.kill();
 		dirty = true;
 	}
 
@@ -524,9 +510,7 @@
 		dragStartView = viewStart;
 		dragMoved = false;
 		selDragStart = clientXToSample(e.clientX);
-		velocity = 0;
-		lastDragX = e.clientX;
-		lastDragTime = performance.now();
+		inertia.start(e.clientX);
 	}
 
 	function onMouseMove(e) {
@@ -555,16 +539,8 @@
 		let dx = e.clientX - dragStartX;
 		if (Math.abs(dx) > dragThreshold) dragMoved = true;
 		if (dragMoved) {
-			let now = performance.now();
-			let dt = now - lastDragTime;
 			let pw = plotW || (w - marginLeft);
-			if (dt > 0) {
-				let span = viewEnd - viewStart;
-				let dxPx = e.clientX - lastDragX;
-				velocity = -(dxPx / pw) * span / dt;
-			}
-			lastDragX = e.clientX;
-			lastDragTime = now;
+			inertia.track(e.clientX, pw, viewEnd - viewStart);
 
 			let span = viewEnd - viewStart;
 			let shift = -(dx / pw) * span;
@@ -627,7 +603,7 @@
 			selection = null;
 			dirty = true;
 		}
-		if (isDragging && performance.now() - lastDragTime > 60) velocity = 0;
+		if (isDragging) inertia.staleCheck();
 		isDragging = false;
 	}
 
@@ -655,9 +631,7 @@
 			dragStartX = t.clientX;
 			dragStartView = viewStart;
 			dragMoved = false;
-			velocity = 0;
-			lastDragX = t.clientX;
-			lastDragTime = performance.now();
+			inertia.start(t.clientX);
 		}
 	}
 
@@ -692,16 +666,8 @@
 
 			if (touchLocked === 'pan') {
 				e.preventDefault();
-				let now = performance.now();
-				let dt = now - lastDragTime;
-				if (dt > 0) {
-					let pw = plotW || (w - marginLeft);
-					let span = viewEnd - viewStart;
-					let dxPx = t.clientX - lastDragX;
-					velocity = -(dxPx / pw) * span / dt;
-				}
-				lastDragX = t.clientX;
-				lastDragTime = now;
+				let pw = plotW || (w - marginLeft);
+				inertia.track(t.clientX, pw, viewEnd - viewStart);
 
 				let dx = t.clientX - dragStartX;
 				if (Math.abs(dx) > dragThreshold) dragMoved = true;
@@ -724,8 +690,7 @@
 	}
 
 	function onTouchEnd() {
-		// Kill velocity if the touch was stale (finger stopped before lifting)
-		if (performance.now() - lastDragTime > 60) velocity = 0;
+		inertia.staleCheck();
 		isDragging = false;
 		touchStartPos = null;
 		touchLocked = null;
@@ -746,6 +711,7 @@
 	});
 
 	onDestroy(() => {
+		hint.destroy();
 		if (typeof cancelAnimationFrame !== 'undefined') {
 			cancelAnimationFrame(raf);
 			window.removeEventListener('resize', resize);
@@ -759,28 +725,20 @@
 	});
 </script>
 
-<div class="canvas-wrap">
-<canvas
-	bind:this={canvas}
-	on:mousedown={onMouseDown}
-	on:mousemove={onCanvasMouseMove}
-	on:mouseleave={onCanvasMouseLeave}
-	class="waveform"
-	class:dragging={isDragging && dragMoved}
-	class:selecting={isSelecting}
-	class:edge-drag={selEdgeDrag !== null}
-></canvas>
-{#if scrollHint}
-	<div class="scroll-hint" class:visible={scrollHint}>
-		<kbd>Ctrl</kbd> + scroll to zoom
-	</div>
-{/if}
-</div>
+<ScrollHint visible={$hintVisible}>
+	<canvas
+		bind:this={canvas}
+		on:mousedown={onMouseDown}
+		on:mousemove={onCanvasMouseMove}
+		on:mouseleave={onCanvasMouseLeave}
+		class="waveform"
+		class:dragging={isDragging && dragMoved}
+		class:selecting={isSelecting}
+		class:edge-drag={selEdgeDrag !== null}
+	></canvas>
+</ScrollHint>
 
 <style>
-	.canvas-wrap {
-		position: relative;
-	}
 	.waveform {
 		display: block;
 		width: 100%;
@@ -802,33 +760,5 @@
 
 	.waveform.edge-drag {
 		cursor: ew-resize;
-	}
-
-	.scroll-hint {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		background: rgba(0, 0, 0, 0.75);
-		color: #ebdbb2;
-		font-size: 0.8rem;
-		padding: 0.4rem 0.8rem;
-		border-radius: 0.4rem;
-		pointer-events: none;
-		animation: hint-fade 1.5s ease-out forwards;
-		white-space: nowrap;
-	}
-
-	.scroll-hint kbd {
-		background: rgba(255, 255, 255, 0.15);
-		padding: 0.1rem 0.35rem;
-		border-radius: 0.2rem;
-		font-family: inherit;
-		font-size: 0.85em;
-	}
-
-	@keyframes hint-fade {
-		0%, 60% { opacity: 1; }
-		100% { opacity: 0; }
 	}
 </style>
