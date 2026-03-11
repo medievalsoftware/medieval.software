@@ -22,51 +22,77 @@
 	/** @type {{ start: number, end: number } | null} selected sample range (inclusive) */
 	export let selection = null;
 
-	let canvas;
-	let ctx;
+	const clipId = `wf-${Math.random().toString(36).slice(2, 8)}`;
+	let minSpan = 0.001;
+	const dragThreshold = 4;
+	const EDGE_GRAB = 6;
+
+	// --- State ---
+
+	/** @type {SVGSVGElement} */
+	let svgEl;
+	/** @type {CanvasRenderingContext2D} */
+	let measureCtx;
 	let w = 0;
 	let h = 0;
-	let dpr = 1;
-	let raf = 0;
-	let dirty = true;
+
 	let marginLeft = 0;
 	let plotW = 0;
 	let hoveredSample = -1;
-
-	// Cached resolved colors
-	let resolvedColor = '#8ec07c';
-	let gridColor = '#665c54';
-	let labelColor = '#a89984';
 
 	// Viewport: 0..1 range over data
 	let viewStart = 0;
 	let viewEnd = 1;
 	let targetStart = 0;
 	let targetEnd = 1;
-	let minSpan = 0.001;
 
 	// Interaction
 	let isDragging = false;
 	let dragStartX = 0;
 	let dragStartView = 0;
 	let dragMoved = false;
-	const dragThreshold = 4;
+
+	// Selection
+	let selDragStart = -1;
+	let isSelecting = false;
+	/** @type {string | null} */
+	let selEdgeDrag = null;
+	let nearEdge = false;
 
 	// Touch
 	let pinchStartDist = 0;
 	let pinchStartStart = 0;
 	let pinchStartEnd = 0;
 	let pinchAnchorFrac = 0.5;
+	/** @type {{ x: number, y: number } | null} */
 	let touchStartPos = null;
+	/** @type {string | null} */
 	let touchLocked = null;
 
-	// Inertia & scroll hint
+	// Animation
+	let raf = 0;
+	let animating = false;
+
 	const inertia = createInertia();
 	const hint = createScrollHint();
 	const hintVisible = hint.visible;
 
+	// --- Helpers ---
+
+	$: ready = !!measureCtx;
+	$: h = height;
+	$: range = max - min || 1;
+
+	$: if (data) {
+		minSpan = data.length > 0 ? Math.min(0.001, 20 / data.length) : 0.001;
+	}
+
+	/**
+	 * @param {number} clientX
+	 * @returns {number}
+	 */
 	function clientXToSample(clientX) {
-		let rect = canvas.getBoundingClientRect();
+		let rect = svgEl.getBoundingClientRect();
 		let mx = clientX - rect.left - marginLeft;
 		let pw = plotW || (w - marginLeft);
 		let frac = mx / pw;
@@ -88,123 +114,90 @@
 		targetEnd = targetStart + span;
 	}
 
-	function resolveColors() {
-		if (!canvas) return;
-		let style = getComputedStyle(canvas);
-		if (color.startsWith('var(')) {
-			let varName = color.slice(4, -1).trim();
-			resolvedColor = style.getPropertyValue(varName).trim() || '#8ec07c';
-		} else {
-			resolvedColor = color;
-		}
-		gridColor = style.getPropertyValue('--bg3').trim() || '#665c54';
-		labelColor = style.getPropertyValue('--fg4').trim() || '#a89984';
+	/**
+	 * @param {number} v
+	 * @param {number} mTop
+	 * @param {number} pH
+	 * @returns {number}
+	 */
+	function valToY(v, mTop, pH) {
+		return mTop + pH - ((v - min) / range) * pH;
 	}
 
-	function resize() {
-		if (!canvas) return;
-		let rect = canvas.getBoundingClientRect();
-		dpr = window.devicePixelRatio || 1;
-		w = rect.width;
-		h = height;
-		canvas.width = w * dpr;
-		canvas.height = h * dpr;
-		canvas.style.height = h + 'px';
-		resolveColors();
-		dirty = true;
+	/**
+	 * @param {number} idx
+	 * @param {number} len
+	 * @returns {number}
+	 */
+	function idxToX(idx, len) {
+		let frac = idx / len;
+		let vFrac = (frac - viewStart) / (viewEnd - viewStart);
+		return marginLeft + vFrac * plotW;
 	}
 
-	function draw() {
-		if (!ctx || !w) {
-			raf = requestAnimationFrame(draw);
-			return;
-		}
+	// --- Reactive layout ---
 
-		// Apply inertia
-		let inertiaDelta = inertia.applyFrame();
-		if (inertiaDelta) {
-			let span = targetEnd - targetStart;
-			targetStart += inertiaDelta;
-			targetEnd = targetStart + span;
-			clampTarget();
-		}
+	$: gridLayout = ready && w > 0 ? computeGridLayout(data, viewStart, viewEnd, w, gridY, gridX, xSubdiv) : null;
 
-		// Lerp viewport
-		let lerpAmt = 0.4;
-		let prevStart = viewStart;
-		let prevEnd = viewEnd;
-		viewStart += (targetStart - viewStart) * lerpAmt;
-		viewEnd += (targetEnd - viewEnd) * lerpAmt;
-		let animating = Math.abs(viewStart - targetStart) > 0.00001 || Math.abs(viewEnd - targetEnd) > 0.00001 || inertia.isMoving;
-		if (!animating) { viewStart = targetStart; viewEnd = targetEnd; }
-		clampView();
+	/**
+	 * @param {Float32Array | number[]} d
+	 * @param {number} vs
+	 * @param {number} ve
+	 * @param {number} width
+	 * @param {typeof gridY} gy
+	 * @param {typeof gridX} gx
+	 * @param {number} xSub
+	 */
+	function computeGridLayout(d, vs, ve, width, gy, gx, xSub) {
+		let len = d.length;
+		if (len === 0) return null;
 
-		if (Math.abs(viewStart - prevStart) > 0.000001 || Math.abs(viewEnd - prevEnd) > 0.000001) {
-			dirty = true;
-		}
-
-		if (!dirty && !animating) {
-			raf = requestAnimationFrame(draw);
-			return;
-		}
-		dirty = false;
-
-		let len = data.length;
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		ctx.clearRect(0, 0, w, h);
-
-		if (len === 0) {
-			raf = requestAnimationFrame(draw);
-			return;
-		}
-
-		let resolved = resolvedColor;
-
-		// Build gridline arrays
+		// Build Y lines
+		/** @type {{ value: number, label?: string }[]} */
 		let yLines = [];
-		if (typeof gridY === 'number' && gridY > 0) {
-			for (let i = 0; i <= gridY; i++) {
-				let value = max - (i / gridY) * (max - min);
+		if (typeof gy === 'number' && gy > 0) {
+			for (let i = 0; i <= gy; i++) {
+				let value = max - (i / gy) * (max - min);
 				let label = value === 0 ? '0' : value.toFixed(1);
 				yLines.push({ value, label });
 			}
-		} else if (Array.isArray(gridY)) {
-			yLines = gridY.map(g => typeof g === 'number' ? { value: g } : g);
+		} else if (Array.isArray(gy)) {
+			yLines = gy.map(g => typeof g === 'number' ? { value: g } : g);
 		}
 
+		// Build X lines
+		/** @type {{ pos: number, label?: string }[]} */
 		let xLines = [];
-		if (typeof gridX === 'number' && gridX > 0) {
-			for (let i = 0; i <= gridX; i++) {
-				let pos = Math.floor((i / gridX) * len);
+		if (typeof gx === 'number' && gx > 0) {
+			for (let i = 0; i <= gx; i++) {
+				let pos = Math.floor((i / gx) * len);
 				xLines.push({ pos, label: String(pos) });
 			}
-		} else if (Array.isArray(gridX)) {
-			xLines = gridX.map(g => typeof g === 'number' ? { pos: g } : g);
+		} else if (Array.isArray(gx)) {
+			xLines = gx.map(g => typeof g === 'number' ? { pos: g } : g);
 		}
 
 		// Adaptive X subdivisions
+		/** @type {{ pos: number, label?: string }[]} */
 		let xSubLines = [];
-		if (xSubdiv > 0) {
-			let visibleSamples = (viewEnd - viewStart) * len;
-			let interval = xSubdiv;
+		if (xSub > 0) {
+			let visibleSamples = (ve - vs) * len;
+			let interval = xSub;
 			let minVisible = 8;
-			// Halve interval until we have enough visible gridlines
 			while (visibleSamples / interval < minVisible && interval > 1) {
 				interval = Math.floor(interval / 2);
 			}
-			// Generate sub-gridlines across the visible range
-			let firstTick = Math.ceil((viewStart * len) / interval) * interval;
-			// Collect major positions for duplicate check
+			let firstTick = Math.ceil((vs * len) / interval) * interval;
 			let majorSet = new Set(xLines.map(l => l.pos));
-			for (let pos = firstTick; pos < viewEnd * len; pos += interval) {
+			for (let pos = firstTick; pos < ve * len; pos += interval) {
 				if (majorSet.has(pos) || pos === 0) continue;
-				let secs = pos / xSubdiv;
+				let secs = pos / xSub;
+				/** @type {string} */
 				let label;
 				if (secs === Math.floor(secs)) {
 					label = secs + 's';
 				} else {
-					// Show as decimal seconds, trim trailing zeros
-					let decimals = Math.max(1, Math.ceil(-Math.log10(interval / xSubdiv)));
+					let decimals = Math.max(1, Math.ceil(-Math.log10(interval / xSub)));
 					label = secs.toFixed(decimals).replace(/0+$/, '').replace(/\.$/, '') + 's';
 				}
 				xSubLines.push({ pos, label });
@@ -216,171 +209,103 @@
 		marginLeft = hasYLabels ? 36 : 0;
 		let marginTop = 8;
 		let marginBottom = (xLines.some(l => l.label) || xSubLines.length > 0) ? 16 : 0;
-		plotW = w - marginLeft;
-		let plotH = h - marginTop - marginBottom;
-		let range = max - min;
+		plotW = width - marginLeft;
+		let pH = height - marginTop - marginBottom;
 
-		function valToY(v) {
-			return marginTop + plotH - ((v - min) / range) * plotH;
-		}
+		// Compute Y grid line positions
+		let yGridItems = yLines.map(line => {
+			let y = valToY(line.value, marginTop, pH);
+			let visible = y >= marginTop && y <= marginTop + pH;
+			return { ...line, y, visible };
+		}).filter(item => item.visible);
 
-		function idxToX(idx) {
-			let frac = idx / len;
-			let vFrac = (frac - viewStart) / (viewEnd - viewStart);
-			return marginLeft + vFrac * plotW;
-		}
+		// Compute X grid line positions
+		let xGridItems = xLines.map(line => {
+			let x = idxToX(line.pos, len);
+			let visible = x >= marginLeft && x <= width;
+			return { ...line, x, visible };
+		}).filter(item => item.visible);
 
-		// Draw Y gridlines
-		ctx.font = "11px 'Fira Mono', monospace";
-		ctx.textBaseline = 'middle';
-		for (let line of yLines) {
-			let y = valToY(line.value);
-			if (y < marginTop || y > marginTop + plotH) continue;
-			ctx.strokeStyle = gridColor;
-			ctx.lineWidth = 1;
-			ctx.globalAlpha = line.value === 0 ? 0.3 : 0.15;
-			ctx.setLineDash(line.value === 0 ? [] : [3, 4]);
-			ctx.beginPath();
-			ctx.moveTo(marginLeft, y);
-			ctx.lineTo(w, y);
-			ctx.stroke();
-			ctx.setLineDash([]);
-			ctx.globalAlpha = 1;
+		// Compute X sub-grid line positions
+		let xSubGridItems = xSubLines.map(line => {
+			let x = idxToX(line.pos, len);
+			let visible = x >= marginLeft && x <= width;
+			return { ...line, x, visible };
+		}).filter(item => item.visible);
 
-			if (line.label) {
-				ctx.fillStyle = labelColor;
-				ctx.globalAlpha = 0.6;
-				ctx.textAlign = 'right';
-				ctx.fillText(line.label, marginLeft - 4, y);
-				ctx.globalAlpha = 1;
-			}
-		}
+		return { yGridItems, xGridItems, xSubGridItems, marginTop, marginBottom, plotH: pH };
+	}
 
-		// Draw X gridlines
-		let startIdx = Math.max(0, Math.floor(viewStart * len) - 1);
-		let endIdx = Math.min(len, Math.ceil(viewEnd * len) + 1);
+	// Waveform path
+	$: waveformData = ready && w > 0 && gridLayout ? computeWaveform(data, viewStart, viewEnd, w, gridLayout.marginTop, gridLayout.plotH, hoveredSample, selection) : null;
+
+	/**
+	 * @param {Float32Array | number[]} d
+	 * @param {number} vs
+	 * @param {number} ve
+	 * @param {number} width
+	 * @param {number} mTop
+	 * @param {number} pH
+	 * @param {number} hovered
+	 * @param {typeof selection} sel
+	 */
+	function computeWaveform(d, vs, ve, width, mTop, pH, hovered, sel) {
+		let len = d.length;
+		if (len === 0 || plotW <= 0) return null;
+
+		let startIdx = Math.max(0, Math.floor(vs * len) - 1);
+		let endIdx = Math.min(len, Math.ceil(ve * len) + 1);
 		let visibleLen = endIdx - startIdx;
-
-		for (let line of xLines) {
-			let x = idxToX(line.pos);
-			if (x < marginLeft || x > w) continue;
-			ctx.strokeStyle = gridColor;
-			ctx.lineWidth = 1;
-			ctx.globalAlpha = 0.15;
-			ctx.setLineDash([3, 4]);
-			ctx.beginPath();
-			ctx.moveTo(x, marginTop);
-			ctx.lineTo(x, marginTop + plotH);
-			ctx.stroke();
-			ctx.setLineDash([]);
-			ctx.globalAlpha = 1;
-
-			if (line.label) {
-				ctx.fillStyle = labelColor;
-				ctx.globalAlpha = 0.6;
-				ctx.textAlign = 'center';
-				ctx.fillText(line.label, x, marginTop + plotH + 11);
-				ctx.globalAlpha = 1;
-			}
-		}
-
-		// Draw X sub-gridlines
-		for (let line of xSubLines) {
-			let x = idxToX(line.pos);
-			if (x < marginLeft || x > w) continue;
-			ctx.strokeStyle = gridColor;
-			ctx.lineWidth = 1;
-			ctx.globalAlpha = 0.12;
-			ctx.setLineDash([2, 4]);
-			ctx.beginPath();
-			ctx.moveTo(x, marginTop);
-			ctx.lineTo(x, marginTop + plotH);
-			ctx.stroke();
-			ctx.setLineDash([]);
-			ctx.globalAlpha = 1;
-
-			if (line.label) {
-				ctx.fillStyle = labelColor;
-				ctx.globalAlpha = 0.4;
-				ctx.textAlign = 'center';
-				ctx.fillText(line.label, x, marginTop + plotH + 11);
-				ctx.globalAlpha = 1;
-			}
-		}
-
-		// Clip to plot area
-		ctx.save();
-		ctx.beginPath();
-		ctx.rect(marginLeft, marginTop, plotW, plotH);
-		ctx.clip();
-
 		let pxPerSample = plotW / visibleLen;
 
-		// Draw selection highlight
-		selLeftX = -1;
-		selRightX = -1;
-		if (selection) {
-			let selX1 = idxToX(selection.start);
-			let selX2 = idxToX(selection.end);
+		// Selection
+		/** @type {{ x1: number, x2: number } | null} */
+		let selRect = null;
+		if (sel) {
+			let selX1 = idxToX(sel.start, len);
+			let selX2 = idxToX(sel.end, len);
 			let halfPx = pxPerSample * 0.5;
-			selX1 -= halfPx;
-			selX2 += halfPx;
-			selLeftX = selX1;
-			selRightX = selX2;
-			ctx.fillStyle = resolved;
-			ctx.globalAlpha = 0.1;
-			ctx.fillRect(selX1, marginTop, selX2 - selX1, plotH);
-			// Edge lines
-			ctx.globalAlpha = 0.5;
-			ctx.strokeStyle = resolved;
-			ctx.lineWidth = 1;
-			ctx.beginPath();
-			ctx.moveTo(selX1, marginTop);
-			ctx.lineTo(selX1, marginTop + plotH);
-			ctx.moveTo(selX2, marginTop);
-			ctx.lineTo(selX2, marginTop + plotH);
-			ctx.stroke();
-			ctx.globalAlpha = 1;
+			selRect = { x1: selX1 - halfPx, x2: selX2 + halfPx };
 		}
 
-		// Draw waveform
-		ctx.strokeStyle = resolved;
-		ctx.lineWidth = 1;
-
 		if (visibleLen <= plotW * 2) {
-			// Few enough samples: draw as connected line
-			ctx.beginPath();
+			// Few enough samples: draw as connected line + optional dots
+			let pathParts = [];
 			for (let i = startIdx; i < endIdx; i++) {
-				let x = idxToX(i);
-				let y = valToY(data[i] || 0);
-				if (i === startIdx) ctx.moveTo(x, y);
-				else ctx.lineTo(x, y);
+				let x = idxToX(i, len);
+				let y = valToY(d[i] || 0, mTop, pH);
+				pathParts.push(i === startIdx ? `M${x},${y}` : `L${x},${y}`);
 			}
-			ctx.stroke();
+			let linePath = pathParts.join('');
 
-			// Draw sample dots when zoomed in enough
+			// Dots when zoomed in enough
+			/** @type {{ x: number, y: number, r: number, opacity: number }[]} */
+			let dots = [];
 			if (pxPerSample >= 8) {
 				let dotAlpha = Math.min(1, (pxPerSample - 8) / 8);
 				let dotR = Math.min(3.5, 1.5 + pxPerSample * 0.05);
-				ctx.fillStyle = resolved;
 				for (let i = startIdx; i < endIdx; i++) {
-					let x = idxToX(i);
-					let y = valToY(data[i] || 0);
-					let isHovered = i === hoveredSample;
-					let isSelected = selection && i >= selection.start && i <= selection.end;
-					ctx.globalAlpha = isHovered || isSelected ? 1 : dotAlpha * 0.7;
-					ctx.beginPath();
-					ctx.arc(x, y, isHovered ? dotR + 1.5 : (isSelected ? dotR + 0.5 : dotR), 0, Math.PI * 2);
-					ctx.fill();
+					let x = idxToX(i, len);
+					let y = valToY(d[i] || 0, mTop, pH);
+					let isHovered = i === hovered;
+					let isSelected = sel && i >= sel.start && i <= sel.end;
+					dots.push({
+						x, y,
+						r: isHovered ? dotR + 1.5 : (isSelected ? dotR + 0.5 : dotR),
+						opacity: isHovered || isSelected ? 1 : dotAlpha * 0.7,
+					});
 				}
-				ctx.globalAlpha = 1;
 			}
+
+			return { mode: 'line', linePath, dots, selRect };
 		} else {
-			// Many samples: filled min/max envelope for natural AA on edges
+			// Many samples: min/max envelope as filled path
 			let cols = Math.ceil(plotW);
-			let maxYs = new Array(cols);
-			let minYs = new Array(cols);
-			let count = 0;
+			let pathParts = [];
+
+			// Forward pass: max values
+			/** @type {number[]} */
+			let minYs = [];
 			for (let px = 0; px < cols; px++) {
 				let s = startIdx + Math.floor((px / cols) * visibleLen);
 				let e = startIdx + Math.floor(((px + 1) / cols) * visibleLen);
@@ -388,41 +313,97 @@
 				e = Math.min(e, len);
 				let mn = Infinity, mx = -Infinity;
 				for (let i = s; i < e; i++) {
-					let v = data[i] || 0;
+					let v = d[i] || 0;
 					if (v < mn) mn = v;
 					if (v > mx) mx = v;
 				}
 				if (mn === Infinity) continue;
-				maxYs[count] = valToY(mx);
-				minYs[count] = valToY(mn);
-				count++;
-			}
-			if (count > 0) {
-				ctx.beginPath();
-				ctx.moveTo(marginLeft, maxYs[0]);
-				for (let i = 1; i < count; i++) {
-					ctx.lineTo(marginLeft + i, maxYs[i]);
+				let maxY = valToY(mx, mTop, pH);
+				let minY = valToY(mn, mTop, pH);
+				let x = marginLeft + px;
+				if (pathParts.length === 0) {
+					pathParts.push(`M${x},${maxY}`);
+				} else {
+					pathParts.push(`L${x},${maxY}`);
 				}
-				for (let i = count - 1; i >= 0; i--) {
-					ctx.lineTo(marginLeft + i, minYs[i]);
-				}
-				ctx.closePath();
-				ctx.fillStyle = resolved;
-				ctx.fill();
+				minYs.push(minY);
 			}
+
+			// Reverse pass: min values
+			for (let i = minYs.length - 1; i >= 0; i--) {
+				pathParts.push(`L${marginLeft + i},${minYs[i]}`);
+			}
+			pathParts.push('Z');
+
+			return { mode: 'envelope', fillPath: pathParts.join(''), selRect };
+		}
+	}
+
+	// Cursor
+	$: cursorClass = selEdgeDrag ? 'edge-drag' : isSelecting ? 'selecting' : (isDragging && dragMoved) ? 'dragging' : nearEdge ? 'edge-hover' : '';
+
+	// --- Animation ---
+
+	function startAnimation() {
+		if (!animating) {
+			animating = true;
+			raf = requestAnimationFrame(animate);
+		}
+	}
+
+	function animate() {
+		let inertiaDelta = !isDragging ? inertia.applyFrame() : 0;
+		if (inertiaDelta) {
+			let span = targetEnd - targetStart;
+			targetStart += inertiaDelta;
+			targetEnd = targetStart + span;
+			clampTarget();
 		}
 
-		ctx.restore();
+		let lerpAmt = 0.4;
+		viewStart += (targetStart - viewStart) * lerpAmt;
+		viewEnd += (targetEnd - viewEnd) * lerpAmt;
 
-		raf = requestAnimationFrame(draw);
+		let still = Math.abs(viewStart - targetStart) < 0.00001
+			&& Math.abs(viewEnd - targetEnd) < 0.00001
+			&& !inertia.isMoving;
+
+		if (still) {
+			viewStart = targetStart;
+			viewEnd = targetEnd;
+			animating = false;
+		} else {
+			raf = requestAnimationFrame(animate);
+		}
+
+		clampView();
 	}
 
-	// Mark dirty when data changes
-	$: if (data) {
-		dirty = true;
-		minSpan = data.length > 0 ? Math.min(0.001, 20 / data.length) : 0.001;
+	// --- Hit testing ---
+
+	/**
+	 * @param {number} clientX
+	 * @returns {string | null}
+	 */
+	function hitTestSelEdge(clientX) {
+		if (!selection || !svgEl) return null;
+		let rect = svgEl.getBoundingClientRect();
+		let mx = clientX - rect.left;
+		let len = data.length;
+		let pxPerSample = plotW / ((viewEnd - viewStart) * len);
+		let halfPx = pxPerSample * 0.5;
+		let leftX = idxToX(selection.start, len) - halfPx;
+		let rightX = idxToX(selection.end, len) + halfPx;
+		let dLeft = Math.abs(mx - leftX);
+		let dRight = Math.abs(mx - rightX);
+		if (dLeft <= EDGE_GRAB && dLeft <= dRight) return 'left';
+		if (dRight <= EDGE_GRAB) return 'right';
+		return null;
 	}
 
+	// --- Event Handlers ---
+
+	/** @param {WheelEvent} e */
 	function onWheel(e) {
 		if (shouldBlockWheel(e)) {
 			hint.show();
@@ -432,20 +413,18 @@
 		e.preventDefault();
 		let dx = e.deltaX || 0;
 		let dy = e.deltaY || 0;
-		let rect = canvas.getBoundingClientRect();
+		let rect = svgEl.getBoundingClientRect();
 		let mx = e.clientX - rect.left - marginLeft;
 		let pw = plotW || (w - marginLeft);
 		let frac = Math.max(0, Math.min(1, mx / pw));
 		let span = targetEnd - targetStart;
 
-		// Horizontal: pan
 		if (Math.abs(dx) > 0) {
 			let shift = dx / pw * span;
 			targetStart += shift;
 			targetEnd += shift;
 		}
 
-		// Vertical: zoom
 		if (Math.abs(dy) > 0) {
 			let zoomFactor = 1 + dy * 0.003;
 			let anchor = targetStart + frac * span;
@@ -457,41 +436,11 @@
 
 		clampTarget();
 		inertia.kill();
-		dirty = true;
+		startAnimation();
 	}
 
-	let selDragStart = -1;
-	let isSelecting = false;
-	let selEdgeDrag = null; // 'left' | 'right' | null
-	let selLeftX = -1;
-	let selRightX = -1;
-	const EDGE_GRAB = 6; // px grab zone
-
-	function selEdgeXFromIdx(idx) {
-		let frac = idx / data.length;
-		let vFrac = (frac - viewStart) / (viewEnd - viewStart);
-		return marginLeft + vFrac * plotW;
-	}
-
-	function hitTestSelEdge(clientX) {
-		if (!selection || !canvas) return null;
-		let rect = canvas.getBoundingClientRect();
-		let mx = clientX - rect.left;
-		let len = data.length;
-		let pxPerSample = plotW / ((viewEnd - viewStart) * len);
-		let halfPx = pxPerSample * 0.5;
-		let leftX = selEdgeXFromIdx(selection.start) - halfPx;
-		let rightX = selEdgeXFromIdx(selection.end) + halfPx;
-		// Prefer closer edge
-		let dLeft = Math.abs(mx - leftX);
-		let dRight = Math.abs(mx - rightX);
-		if (dLeft <= EDGE_GRAB && dLeft <= dRight) return 'left';
-		if (dRight <= EDGE_GRAB) return 'right';
-		return null;
-	}
-
+	/** @param {MouseEvent} e */
 	function onMouseDown(e) {
-		// Check selection edge grab
 		let edge = hitTestSelEdge(e.clientX);
 		if (edge) {
 			selEdgeDrag = edge;
@@ -501,7 +450,6 @@
 			isSelecting = true;
 			selDragStart = clientXToSample(e.clientX);
 			selection = { start: selDragStart, end: selDragStart };
-			dirty = true;
 			return;
 		}
 		isDragging = true;
@@ -512,8 +460,9 @@
 		inertia.start(e.clientX);
 	}
 
+	/** @param {MouseEvent} e */
 	function onMouseMove(e) {
-		if (selEdgeDrag) {
+		if (selEdgeDrag && selection) {
 			let idx = clientXToSample(e.clientX);
 			idx = Math.max(0, Math.min(data.length - 1, idx));
 			if (selEdgeDrag === 'left') {
@@ -521,7 +470,6 @@
 			} else {
 				selection = { start: selection.start, end: Math.max(idx, selection.start) };
 			}
-			dirty = true;
 			return;
 		}
 		if (isSelecting) {
@@ -531,7 +479,6 @@
 				start: Math.min(selDragStart, idx),
 				end: Math.max(selDragStart, idx)
 			};
-			dirty = true;
 			return;
 		}
 		if (!isDragging) return;
@@ -549,23 +496,20 @@
 			viewEnd = targetEnd;
 			clampView();
 			clampTarget();
-			dirty = true;
 		}
 	}
 
-	let nearEdge = false;
-
-	function onCanvasMouseMove(e) {
+	/** @param {MouseEvent} e */
+	function onSvgMouseMove(e) {
 		// Check if near selection edge for cursor
 		if (selection && !isDragging && !isSelecting && !selEdgeDrag) {
 			let wasNear = nearEdge;
 			nearEdge = hitTestSelEdge(e.clientX) !== null;
 			if (nearEdge !== wasNear) {
-				canvas.style.cursor = nearEdge ? 'ew-resize' : '';
+				// Cursor managed via CSS class
 			}
 		} else if (nearEdge && !selEdgeDrag) {
 			nearEdge = false;
-			canvas.style.cursor = '';
 		}
 
 		let visibleLen = Math.ceil((viewEnd - viewStart) * data.length);
@@ -574,21 +518,20 @@
 			let idx = clientXToSample(e.clientX);
 			if (idx >= 0 && idx < data.length && idx !== hoveredSample) {
 				hoveredSample = idx;
-				dirty = true;
 			}
 		} else if (hoveredSample >= 0) {
 			hoveredSample = -1;
-			dirty = true;
 		}
 	}
 
-	function onCanvasMouseLeave() {
+	function onSvgMouseLeave() {
 		if (hoveredSample >= 0) {
 			hoveredSample = -1;
-			dirty = true;
 		}
+		nearEdge = false;
 	}
 
+	/** @param {MouseEvent} e */
 	function onMouseUp(e) {
 		if (selEdgeDrag) {
 			selEdgeDrag = null;
@@ -600,18 +543,21 @@
 		}
 		if (isDragging && !dragMoved && selection) {
 			selection = null;
-			dirty = true;
 		}
-		if (isDragging) inertia.staleCheck();
+		if (isDragging) {
+			inertia.staleCheck();
+			if (inertia.isMoving) startAnimation();
+		}
 		isDragging = false;
 	}
 
+	/** @param {TouchEvent} e */
 	function onTouchStart(e) {
 		let touches = e.touches;
 		if (touches.length === 2) {
 			e.preventDefault();
 			let t0 = touches[0], t1 = touches[1];
-			let rect = canvas.getBoundingClientRect();
+			let rect = svgEl.getBoundingClientRect();
 			pinchStartDist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
 			pinchStartStart = targetStart;
 			pinchStartEnd = targetEnd;
@@ -623,7 +569,7 @@
 		}
 		if (touches.length === 1) {
 			let t = touches[0];
-			let rect = canvas.getBoundingClientRect();
+			let rect = svgEl.getBoundingClientRect();
 			touchStartPos = { x: t.clientX - rect.left, y: t.clientY - rect.top };
 			touchLocked = null;
 			isDragging = true;
@@ -634,6 +580,7 @@
 		}
 	}
 
+	/** @param {TouchEvent} e */
 	function onTouchMove(e) {
 		let touches = e.touches;
 		if (touches.length === 2) {
@@ -647,11 +594,12 @@
 			targetStart = anchor - pinchAnchorFrac * span;
 			targetEnd = targetStart + span;
 			clampTarget();
+			startAnimation();
 			return;
 		}
 		if (touches.length === 1 && touchStartPos) {
 			let t = touches[0];
-			let rect = canvas.getBoundingClientRect();
+			let rect = svgEl.getBoundingClientRect();
 			let tx = t.clientX - rect.left;
 			let ty = t.clientY - rect.top;
 
@@ -671,7 +619,6 @@
 				let dx = t.clientX - dragStartX;
 				if (Math.abs(dx) > dragThreshold) dragMoved = true;
 				if (dragMoved) {
-					let pw = plotW || (w - marginLeft);
 					let span = viewEnd - viewStart;
 					let shift = -(dx / pw) * span;
 					targetStart = dragStartView + shift;
@@ -680,7 +627,6 @@
 					viewEnd = targetEnd;
 					clampView();
 					clampTarget();
-					dirty = true;
 				}
 			} else if (touchLocked === 'scroll') {
 				isDragging = false;
@@ -688,53 +634,141 @@
 		}
 	}
 
-	function onTouchEnd() {
-		inertia.staleCheck();
+	/** @param {TouchEvent} e */
+	function onTouchEnd(e) {
+		if (isDragging) {
+			inertia.staleCheck();
+			if (inertia.isMoving) startAnimation();
+		}
 		isDragging = false;
 		touchStartPos = null;
 		touchLocked = null;
 	}
 
-	onMount(() => {
-		ctx = canvas.getContext('2d');
+	// --- Resize ---
+
+	function resize() {
+		if (!svgEl) return;
+		w = svgEl.getBoundingClientRect().width;
+	}
+
+	// --- Lifecycle ---
+
+	onMount(async () => {
 		resize();
-		raf = requestAnimationFrame(draw);
+		await document.fonts.ready;
+		let c = document.createElement('canvas');
+		measureCtx = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+		svgEl.addEventListener('wheel', onWheel, { passive: false });
+		svgEl.addEventListener('touchstart', onTouchStart, { passive: false });
+		svgEl.addEventListener('touchmove', onTouchMove, { passive: false });
+		svgEl.addEventListener('touchend', onTouchEnd);
 		window.addEventListener('resize', resize);
 		window.addEventListener('mousemove', onMouseMove);
 		window.addEventListener('mouseup', onMouseUp);
-		canvas.addEventListener('wheel', onWheel, { passive: false });
-		// Must be non-passive so preventDefault() works for pinch-zoom
-		canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-		canvas.addEventListener('touchmove', onTouchMove, { passive: false });
-		canvas.addEventListener('touchend', onTouchEnd);
 	});
 
 	onDestroy(() => {
 		hint.destroy();
-		if (typeof cancelAnimationFrame !== 'undefined') {
+		if (typeof window !== 'undefined') {
 			cancelAnimationFrame(raf);
 			window.removeEventListener('resize', resize);
 			window.removeEventListener('mousemove', onMouseMove);
 			window.removeEventListener('mouseup', onMouseUp);
-			canvas.removeEventListener('wheel', onWheel);
-			canvas.removeEventListener('touchstart', onTouchStart);
-			canvas.removeEventListener('touchmove', onTouchMove);
-			canvas.removeEventListener('touchend', onTouchEnd);
+			svgEl?.removeEventListener('wheel', onWheel);
+			svgEl?.removeEventListener('touchstart', onTouchStart);
+			svgEl?.removeEventListener('touchmove', onTouchMove);
+			svgEl?.removeEventListener('touchend', onTouchEnd);
 		}
 	});
 </script>
 
 <ScrollHint visible={$hintVisible}>
-	<canvas
-		bind:this={canvas}
+	<svg
+		bind:this={svgEl}
+		width="100%"
+		height={h}
+		class="waveform {cursorClass}"
 		on:mousedown={onMouseDown}
-		on:mousemove={onCanvasMouseMove}
-		on:mouseleave={onCanvasMouseLeave}
-		class="waveform"
-		class:dragging={isDragging && dragMoved}
-		class:selecting={isSelecting}
-		class:edge-drag={selEdgeDrag !== null}
-	></canvas>
+		on:mousemove={onSvgMouseMove}
+		on:mouseleave={onSvgMouseLeave}
+	>
+		<defs>
+			<clipPath id={clipId}>
+				<rect x={marginLeft} y={gridLayout ? gridLayout.marginTop : 0}
+					width={Math.max(0, plotW)} height={gridLayout ? gridLayout.plotH : h} />
+			</clipPath>
+		</defs>
+
+		{#if ready && gridLayout}
+			<!-- Y gridlines -->
+			{#each gridLayout.yGridItems as line}
+				<line x1={marginLeft} y1={line.y} x2={w} y2={line.y}
+					stroke="var(--bg3)" stroke-width="1"
+					stroke-dasharray={line.value === 0 ? 'none' : '3,4'}
+					opacity={line.value === 0 ? 0.3 : 0.15} />
+				{#if line.label}
+					<text x={marginLeft - 4} y={line.y}
+						class="wf-label wf-label-y"
+						opacity="0.6">{line.label}</text>
+				{/if}
+			{/each}
+
+			<!-- X gridlines -->
+			{#each gridLayout.xGridItems as line}
+				<line x1={line.x} y1={gridLayout.marginTop} x2={line.x} y2={gridLayout.marginTop + gridLayout.plotH}
+					stroke="var(--bg3)" stroke-width="1" stroke-dasharray="3,4" opacity="0.15" />
+				{#if line.label}
+					<text x={line.x} y={gridLayout.marginTop + gridLayout.plotH + 11}
+						class="wf-label wf-label-x"
+						opacity="0.6">{line.label}</text>
+				{/if}
+			{/each}
+
+			<!-- X sub-gridlines -->
+			{#each gridLayout.xSubGridItems as line}
+				<line x1={line.x} y1={gridLayout.marginTop} x2={line.x} y2={gridLayout.marginTop + gridLayout.plotH}
+					stroke="var(--bg3)" stroke-width="1" stroke-dasharray="2,4" opacity="0.12" />
+				{#if line.label}
+					<text x={line.x} y={gridLayout.marginTop + gridLayout.plotH + 11}
+						class="wf-label wf-label-x"
+						opacity="0.4">{line.label}</text>
+				{/if}
+			{/each}
+
+			<!-- Clipped waveform content -->
+			<g clip-path="url(#{clipId})">
+				{#if waveformData}
+					<!-- Selection highlight -->
+					{#if waveformData.selRect}
+						<rect x={waveformData.selRect.x1} y={gridLayout.marginTop}
+							width={Math.max(0, waveformData.selRect.x2 - waveformData.selRect.x1)}
+							height={gridLayout.plotH}
+							fill={color} opacity="0.1" />
+						<line x1={waveformData.selRect.x1} y1={gridLayout.marginTop}
+							x2={waveformData.selRect.x1} y2={gridLayout.marginTop + gridLayout.plotH}
+							stroke={color} stroke-width="1" opacity="0.5" />
+						<line x1={waveformData.selRect.x2} y1={gridLayout.marginTop}
+							x2={waveformData.selRect.x2} y2={gridLayout.marginTop + gridLayout.plotH}
+							stroke={color} stroke-width="1" opacity="0.5" />
+					{/if}
+
+					<!-- Waveform -->
+					{#if waveformData.mode === 'line'}
+						<path d={waveformData.linePath} fill="none" stroke={color} stroke-width="1" />
+						{#if waveformData.dots}
+							{#each waveformData.dots as dot}
+								<circle cx={dot.x} cy={dot.y} r={dot.r}
+									fill={color} opacity={dot.opacity} />
+							{/each}
+						{/if}
+					{:else if waveformData.mode === 'envelope'}
+						<path d={waveformData.fillPath} fill={color} stroke={color} stroke-width="1" />
+					{/if}
+				{/if}
+			</g>
+		{/if}
+	</svg>
 </ScrollHint>
 
 <style>
@@ -747,17 +781,31 @@
 		border: 1px dashed var(--bg3);
 		border-radius: 0.4rem;
 		box-sizing: content-box;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 
-	.waveform.dragging {
-		cursor: grabbing;
+	.waveform.dragging { cursor: grabbing; }
+	.waveform.selecting { cursor: crosshair; }
+	.waveform.edge-drag, .waveform.edge-hover { cursor: ew-resize; }
+
+	.waveform text {
+		font-family: 'Fira Mono', monospace;
+		pointer-events: none;
 	}
 
-	.waveform.selecting {
-		cursor: crosshair;
+	.wf-label {
+		font-size: 11px;
+		fill: var(--fg4);
 	}
 
-	.waveform.edge-drag {
-		cursor: ew-resize;
+	.wf-label-y {
+		text-anchor: end;
+		dominant-baseline: central;
+	}
+
+	.wf-label-x {
+		text-anchor: middle;
+		dominant-baseline: auto;
 	}
 </style>
