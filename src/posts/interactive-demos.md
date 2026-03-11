@@ -673,7 +673,6 @@ Most of the demonstrations in previous posts relied on recorded video of p5.js s
 # Timeline
 
 <Timeline
-  title="Medieval Software — Full Timeline"
   events={[
     { date: '2023-01-03', label: 'Looking Forward', color: [142, 192, 124], link: '/looking-forward' },
     { date: '2023-01-14', label: 'Devblog 1', color: [131, 165, 152], link: '/rune-synergy-devblog-1' },

@@ -62,7 +62,9 @@ export function createInertia(decayRate = 0.998) {
 			let dt = now - lastTime;
 			if (dt > 0) {
 				let dxPx = x - lastX;
-				velocity = -(dxPx / viewWidth) * viewSpan / dt;
+				let v = -(dxPx / viewWidth) * viewSpan / dt;
+				// Smooth velocity to avoid spikes from infrequent mouse events
+				velocity = velocity * 0.6 + v * 0.4;
 			}
 			lastX = x;
 			lastTime = now;
@@ -92,6 +94,9 @@ export function createInertia(decayRate = 0.998) {
 		/** Kill velocity if the last drag event was stale (>60ms ago). Call on pointerup. */
 		staleCheck() {
 			if (performance.now() - lastTime > 60) velocity = 0;
+			// Reset frame timer so first animation frame uses default 16ms dt
+			// instead of elapsed time since last animation ended
+			lastFrameTime = 0;
 		},
 
 		get isMoving() { return Math.abs(velocity) > 0.000001; },

@@ -1,6 +1,5 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { drawGrid } from '../grid.js';
 	import { createScrollHint, shouldBlockWheel, createInertia } from '../canvasInteraction.js';
 	import ScrollHint from './ScrollHint.svelte';
 
@@ -10,61 +9,62 @@
 
 	/** @type {FlameNode} */
 	export let root;
-	/** @type {number} canvas height in CSS px */
+	/** @type {number} chart height in CSS px */
 	export let height = 300;
 	/** @type {number} height of each bar row in CSS px */
 	export let rowHeight = 22;
 	/** @type {string} search/highlight filter */
 	export let search = '';
 
-	let canvas;
-	let ctx;
+	const PALETTE_NAMES = ['aqua', 'green', 'blue', 'purple', 'yellow', 'orange', 'red'];
+	const clipId = `fc-${Math.random().toString(36).slice(2, 8)}`;
+	const minSpan = 0.0001;
+	const dragThreshold = 4;
+	const gap = 0.5;
+
+	// --- State ---
+
+	/** @type {SVGSVGElement} */
+	let svgEl;
+	/** @type {CanvasRenderingContext2D} */
+	let measureCtx;
 	let w = 0;
 	let h = 0;
-	let dpr = 1;
-	let raf = 0;
-	let dirty = true;
 
-	// Layout
 	/** @type {{ node: FlameNode, depth: number, startFrac: number, widthFrac: number }[]} */
 	let bars = [];
 	let maxDepth = 0;
-
-	// Cached colors
-	const PALETTE_NAMES = ['aqua', 'green', 'blue', 'purple', 'yellow', 'orange', 'red'];
-	let palette = [];
-	let paletteDim = [];
-	let bgColor = '#282828';
-	let fgColor = '#ebdbb2';
-	let fg4Color = '#a89984';
-	let bg3Color = '#665c54';
 
 	// Viewport: 0..1 range
 	let viewStart = 0;
 	let viewEnd = 1;
 	let targetStart = 0;
 	let targetEnd = 1;
-	let minSpan = 0.0001;
 
 	// Interaction
 	let isDragging = false;
 	let dragStartX = 0;
 	let dragStartView = 0;
 	let dragMoved = false;
-	const dragThreshold = 4;
 	let hoveredIdx = -1;
 	let mouseX = 0, mouseY = 0;
 	let zoomedBar = -1;
+	let isHovering = false;
 
 	// Touch
 	let pinchStartDist = 0;
 	let pinchStartStart = 0;
 	let pinchStartEnd = 0;
 	let pinchAnchorFrac = 0.5;
+	/** @type {{ x: number, y: number } | null} */
 	let touchStartPos = null;
+	/** @type {string | null} */
 	let touchLocked = null;
 
-	// Inertia & scroll hint
+	// Animation
+	let raf = 0;
+	let animating = false;
+
 	const inertia = createInertia();
 	const hint = createScrollHint();
 	const hintVisible = hint.visible;
@@ -72,10 +72,14 @@
 	// Search
 	let matchSet = new Set();
 
+	// --- Helpers ---
+
+	/** @param {FlameNode} node */
 	function flatten(node) {
 		bars = [];
 		maxDepth = 0;
 		let total = node.value;
+		/** @param {FlameNode} n @param {number} depth @param {number} offset */
 		function visit(n, depth, offset) {
 			let frac = n.value / total;
 			bars.push({ node: n, depth, startFrac: offset, widthFrac: frac });
@@ -91,40 +95,13 @@
 		visit(node, 0, 0);
 	}
 
+	/** @param {string} name */
 	function hashName(name) {
 		let h = 0;
 		for (let i = 0; i < name.length; i++) {
 			h = ((h << 5) - h + name.charCodeAt(i)) | 0;
 		}
 		return ((h % PALETTE_NAMES.length) + PALETTE_NAMES.length) % PALETTE_NAMES.length;
-	}
-
-	function resolveColors() {
-		if (!canvas) return;
-		let style = getComputedStyle(canvas);
-		palette = PALETTE_NAMES.map(name =>
-			style.getPropertyValue('--' + name).trim() || '#83a598'
-		);
-		paletteDim = PALETTE_NAMES.map(name =>
-			style.getPropertyValue('--' + name + '-dim').trim() || '#456070'
-		);
-		bgColor = style.getPropertyValue('--bg').trim() || '#282828';
-		fgColor = style.getPropertyValue('--fg').trim() || '#ebdbb2';
-		fg4Color = style.getPropertyValue('--fg4').trim() || '#a89984';
-		bg3Color = style.getPropertyValue('--bg3').trim() || '#665c54';
-	}
-
-	function resize() {
-		if (!canvas) return;
-		let rect = canvas.getBoundingClientRect();
-		dpr = window.devicePixelRatio || 1;
-		w = rect.width;
-		h = Math.max(height, (maxDepth + 1) * rowHeight + 4);
-		canvas.width = w * dpr;
-		canvas.height = h * dpr;
-		canvas.style.height = h + 'px';
-		resolveColors();
-		dirty = true;
 	}
 
 	function clampView() {
@@ -141,162 +118,208 @@
 		targetEnd = targetStart + span;
 	}
 
-	function draw() {
-		raf = requestAnimationFrame(draw);
-		if (!ctx || !w) return;
-
-		// Apply inertia
-		let inertiaDelta = inertia.applyFrame();
-		if (inertiaDelta) {
-			let span = targetEnd - targetStart;
-			targetStart += inertiaDelta;
-			targetEnd = targetStart + span;
-			clampTarget();
+	/**
+	 * @param {string} text
+	 * @param {number} maxW
+	 * @returns {string | null}
+	 */
+	function truncateText(text, maxW) {
+		if (!measureCtx || maxW <= 28) return null;
+		measureCtx.font = `${Math.min(13, rowHeight - 6)}px 'Fira Mono', monospace`;
+		if (measureCtx.measureText(text).width <= maxW) return text;
+		while (text.length > 1 && measureCtx.measureText(text + '\u2026').width > maxW) {
+			text = text.slice(0, -1);
 		}
+		return text + '\u2026';
+	}
 
-		// Lerp viewport
-		let lerpAmt = 0.4;
-		let prevStart = viewStart;
-		let prevEnd = viewEnd;
-		viewStart += (targetStart - viewStart) * lerpAmt;
-		viewEnd += (targetEnd - viewEnd) * lerpAmt;
-		let animating = Math.abs(viewStart - targetStart) > 0.00001 || Math.abs(viewEnd - targetEnd) > 0.00001 || inertia.isMoving;
-		if (!animating) { viewStart = targetStart; viewEnd = targetEnd; }
-		clampView();
+	// --- Reactive layout ---
 
-		if (Math.abs(viewStart - prevStart) > 0.000001 || Math.abs(viewEnd - prevEnd) > 0.000001) {
-			dirty = true;
-		}
+	$: ready = !!measureCtx;
 
-		if (!dirty && !animating) return;
-		dirty = false;
+	$: if (root) {
+		flatten(root);
+		h = Math.max(height, (maxDepth + 1) * rowHeight + 4);
+	}
 
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		ctx.clearRect(0, 0, w, h);
+	$: span = viewEnd - viewStart;
 
-		ctx.save();
-		ctx.beginPath();
-		ctx.rect(0, 0, w, h);
-		ctx.clip();
+	/** @type {VisibleBar[]} */
+	$: visibleBars = ready && w > 0 ? /** @type {VisibleBar[]} */ (computeVisibleBars(bars, viewStart, viewEnd, w, hoveredIdx, matchSet)) : [];
 
-		drawGrid(ctx, w, h, viewStart, viewEnd, bg3Color);
-
-		let span = viewEnd - viewStart;
+	/**
+	 * @param {typeof bars} allBars
+	 * @param {number} vs
+	 * @param {number} ve
+	 * @param {number} width
+	 * @param {number} hovered
+	 * @param {Set<number>} matches
+	 */
+	function computeVisibleBars(allBars, vs, ve, width, hovered, matches) {
+		let sp = ve - vs;
+		if (sp <= 0) return [];
 		let hasSearch = search.length > 0;
-		let gap = 0.5;
 
-		for (let i = 0; i < bars.length; i++) {
-			let bar = bars[i];
-			let x = ((bar.startFrac - viewStart) / span) * w;
-			let bw = (bar.widthFrac / span) * w;
+		return allBars.map((bar, i) => {
+			let x = ((bar.startFrac - vs) / sp) * width;
+			let bw = (bar.widthFrac / sp) * width;
 
 			// Cull off-screen
-			if (x + bw < 0 || x > w) continue;
+			if (x + bw < 0 || x > width) return null;
 
 			let y = bar.depth * rowHeight;
-			if (y + rowHeight < 0 || y > h) continue;
+			if (y + rowHeight < 0 || y > h) return null;
 
 			let colorIdx = bar.node.color ? -1 : hashName(bar.node.name);
-			let isHovered = i === hoveredIdx;
-			let isMatch = hasSearch && matchSet.has(i);
+			let isHovered = i === hovered;
+			let isMatch = hasSearch && matches.has(i);
 			let dimmed = hasSearch && !isMatch;
-
-			// Fill color
-			let fillColor;
-			if (bar.node.color) {
-				fillColor = bar.node.color;
-			} else if (isHovered) {
-				fillColor = palette[colorIdx];
-			} else {
-				fillColor = paletteDim[colorIdx];
-			}
-
-			ctx.globalAlpha = dimmed ? 0.25 : 1;
-			ctx.fillStyle = fillColor;
-			ctx.fillRect(x + gap, y + gap, Math.max(1, bw - gap * 2), rowHeight - gap * 2);
-
-			// Hover outline
-			if (isHovered) {
-				ctx.strokeStyle = fgColor;
-				ctx.lineWidth = 1.5;
-				ctx.strokeRect(x + gap, y + gap, Math.max(1, bw - gap * 2), rowHeight - gap * 2);
-			}
-
-			// Search match highlight outline
-			if (isMatch && !isHovered) {
-				ctx.strokeStyle = palette[colorIdx >= 0 ? colorIdx : 0];
-				ctx.lineWidth = 1;
-				ctx.strokeRect(x + gap, y + gap, Math.max(1, bw - gap * 2), rowHeight - gap * 2);
-			}
 
 			// Text label — clamp to visible area so partially off-screen bars still show text
 			let textLeft = Math.max(0, x) + 4;
 			let barRight = x + bw - 4;
 			let maxTextW = barRight - textLeft;
-			if (maxTextW > 28) {
-				ctx.fillStyle = dimmed ? fg4Color : fgColor;
-				ctx.font = `${Math.min(13, rowHeight - 6)}px 'Fira Mono', monospace`;
-				ctx.textBaseline = 'middle';
-				let text = bar.node.name;
-				if (ctx.measureText(text).width > maxTextW) {
-					while (text.length > 1 && ctx.measureText(text + '\u2026').width > maxTextW) {
-						text = text.slice(0, -1);
-					}
-					text += '\u2026';
-				}
-				ctx.fillText(text, textLeft, y + rowHeight / 2);
-			}
+			let label = truncateText(bar.node.name, maxTextW);
 
-			ctx.globalAlpha = 1;
-		}
-
-		// Tooltip
-		if (hoveredIdx >= 0 && hoveredIdx < bars.length) {
-			let bar = bars[hoveredIdx];
-			let rootVal = root.value;
-			let pct = ((bar.node.value / rootVal) * 100).toFixed(1);
-			let lines = [bar.node.name, `${bar.node.value} (${pct}%)`];
-			if (bar.node.detail) lines.push(bar.node.detail);
-
-			let fontSize = 12;
-			ctx.font = `${fontSize}px 'Fira Mono', monospace`;
-			let lineH = fontSize + 4;
-			let padX = 6, padY = 4;
-			let tipW = Math.max(...lines.map(l => ctx.measureText(l).width)) + padX * 2;
-			let tipH = lines.length * lineH + padY * 2;
-
-			// Position following cursor
-			let tx = Math.max(2, Math.min(w - tipW - 2, mouseX + 12));
-			let ty = mouseY + 16;
-			if (ty + tipH > h) ty = mouseY - tipH - 8;
-
-			ctx.fillStyle = bgColor;
-			ctx.globalAlpha = 0.92;
-			ctx.fillRect(tx, ty, tipW, tipH);
-			ctx.globalAlpha = 1;
-			ctx.strokeStyle = bg3Color;
-			ctx.lineWidth = 1;
-			ctx.strokeRect(tx, ty, tipW, tipH);
-
-			ctx.fillStyle = fgColor;
-			ctx.textBaseline = 'top';
-			for (let li = 0; li < lines.length; li++) {
-				ctx.fillStyle = li === 0 ? fgColor : fg4Color;
-				ctx.fillText(lines[li], tx + padX, ty + padY + li * lineH);
-			}
-		}
-
-		ctx.restore();
+			return {
+				i, x: x + gap, y: y + gap,
+				w: Math.max(1, bw - gap * 2),
+				h: rowHeight - gap * 2,
+				colorIdx, isHovered, isMatch, dimmed,
+				label, textLeft, textY: y + rowHeight / 2,
+				node: bar.node,
+			};
+		}).filter(Boolean);
 	}
 
+	/** @typedef {{ i: number, x: number, y: number, w: number, h: number, colorIdx: number, isHovered: boolean, isMatch: boolean, dimmed: boolean, label: string | null, textLeft: number, textY: number, node: FlameNode }} VisibleBar */
+
+	// Grid lines
+	$: gridLines = ready && w > 0 ? computeGrid(viewStart, viewEnd, w) : [];
+
+	/**
+	 * @param {number} vs
+	 * @param {number} ve
+	 * @param {number} width
+	 */
+	function computeGrid(vs, ve, width) {
+		let sp = ve - vs;
+		if (sp <= 0) return [];
+
+		let rawStep = sp / 8;
+		let mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+		let norm = rawStep / mag;
+		let step;
+		if (norm < 1.5) step = mag;
+		else if (norm < 3.5) step = 2 * mag;
+		else if (norm < 7.5) step = 5 * mag;
+		else step = 10 * mag;
+
+		let subStep = step / 4;
+		let subStart = Math.floor(vs / subStep) * subStep;
+		let lines = [];
+
+		for (let v = subStart; v <= ve + subStep; v += subStep) {
+			let x = ((v - vs) / sp) * width;
+			if (x < -1 || x > width + 1) continue;
+			let isMajor = Math.abs(Math.round(v / step) * step - v) < step * 0.001;
+			lines.push({ x: Math.round(x) + 0.5, opacity: isMajor ? 0.16 : 0.08 });
+		}
+		return lines;
+	}
+
+	// Tooltip
+	$: tipData = hoveredIdx >= 0 && hoveredIdx < bars.length && ready
+		? computeTip(hoveredIdx, mouseX, mouseY, w, h)
+		: null;
+
+	/**
+	 * @param {number} idx
+	 * @param {number} mx
+	 * @param {number} my
+	 * @param {number} width
+	 * @param {number} height
+	 */
+	function computeTip(idx, mx, my, width, height) {
+		let bar = bars[idx];
+		let rootVal = root.value;
+		let pct = ((bar.node.value / rootVal) * 100).toFixed(1);
+		let lines = [bar.node.name, `${bar.node.value} (${pct}%)`];
+		if (bar.node.detail) lines.push(bar.node.detail);
+
+		if (!measureCtx) return null;
+		measureCtx.font = "12px 'Fira Mono', monospace";
+		let lineH = 16;
+		let padX = 6, padY = 4;
+		let maxW = 0;
+		for (let tl of lines) {
+			let tw = measureCtx.measureText(tl).width;
+			if (tw > maxW) maxW = tw;
+		}
+		let tipW = maxW + padX * 2;
+		let tipH = lines.length * lineH + padY * 2;
+		let tx = Math.max(2, Math.min(width - tipW - 2, mx + 12));
+		let ty = my + 16;
+		if (ty + tipH > height) ty = my - tipH - 8;
+
+		return { x: tx, y: ty, w: tipW, h: tipH, padX, padY, lineH, lines };
+	}
+
+	// Cursor
+	$: cursorClass = isDragging && dragMoved ? 'dragging' : hoveredIdx >= 0 ? 'hovering' : '';
+
+	// --- Animation ---
+
+	function startAnimation() {
+		if (!animating) {
+			animating = true;
+			raf = requestAnimationFrame(animate);
+		}
+	}
+
+	function animate() {
+		let inertiaDelta = !isDragging ? inertia.applyFrame() : 0;
+		if (inertiaDelta) {
+			let sp = targetEnd - targetStart;
+			targetStart += inertiaDelta;
+			targetEnd = targetStart + sp;
+			clampTarget();
+		}
+
+		let lerpAmt = 0.4;
+		viewStart += (targetStart - viewStart) * lerpAmt;
+		viewEnd += (targetEnd - viewEnd) * lerpAmt;
+
+		let still = Math.abs(viewStart - targetStart) < 0.00001
+			&& Math.abs(viewEnd - targetEnd) < 0.00001
+			&& !inertia.isMoving;
+
+		if (still) {
+			viewStart = targetStart;
+			viewEnd = targetEnd;
+			animating = false;
+		} else {
+			raf = requestAnimationFrame(animate);
+		}
+
+		clampView();
+	}
+
+	// --- Hit testing ---
+
+	/**
+	 * @param {number} clientX
+	 * @param {number} clientY
+	 */
 	function hitTest(clientX, clientY) {
-		let rect = canvas.getBoundingClientRect();
+		if (!svgEl) return -1;
+		let rect = svgEl.getBoundingClientRect();
 		let lx = clientX - rect.left;
 		let ly = clientY - rect.top;
 		if (lx < 0 || lx > w || ly < 0 || ly > h) return -1;
 		let depth = Math.floor(ly / rowHeight);
-		let span = viewEnd - viewStart;
-		let frac = viewStart + (lx / w) * span;
+		let sp = viewEnd - viewStart;
+		let frac = viewStart + (lx / w) * sp;
 
 		for (let i = 0; i < bars.length; i++) {
 			let bar = bars[i];
@@ -308,8 +331,9 @@
 		return -1;
 	}
 
-	// --- Input handlers ---
+	// --- Event Handlers ---
 
+	/** @param {WheelEvent} e */
 	function onWheel(e) {
 		if (shouldBlockWheel(e)) {
 			hint.show();
@@ -319,28 +343,27 @@
 		e.preventDefault();
 		let dx = e.deltaX || 0;
 		let dy = e.deltaY || 0;
-		let rect = canvas.getBoundingClientRect();
+		let rect = svgEl.getBoundingClientRect();
 		let mx = e.clientX - rect.left;
 		let frac = mx / w;
-		let span = targetEnd - targetStart;
+		let sp = targetEnd - targetStart;
 
-		// Horizontal: pan
 		if (Math.abs(dx) > Math.abs(dy)) {
-			let shift = (dx / w) * span;
+			let shift = (dx / w) * sp;
 			targetStart += shift;
 			targetEnd += shift;
 		} else {
-			// Vertical: zoom around cursor
 			let zoomFactor = dy > 0 ? 1.08 : 1 / 1.08;
-			let newSpan = Math.max(minSpan, Math.min(1, span * zoomFactor));
-			let anchor = targetStart + frac * span;
+			let newSpan = Math.max(minSpan, Math.min(1, sp * zoomFactor));
+			let anchor = targetStart + frac * sp;
 			targetStart = anchor - frac * newSpan;
 			targetEnd = targetStart + newSpan;
 		}
 		clampTarget();
-		dirty = true;
+		startAnimation();
 	}
 
+	/** @param {MouseEvent} e */
 	function onMouseDown(e) {
 		if (e.button !== 0) return;
 		isDragging = true;
@@ -350,44 +373,39 @@
 		inertia.start(e.clientX);
 	}
 
+	/** @param {MouseEvent} e */
 	function onMouseMove(e) {
-		let rect = canvas.getBoundingClientRect();
+		let rect = svgEl.getBoundingClientRect();
 		mouseX = e.clientX - rect.left;
 		mouseY = e.clientY - rect.top;
 
-		// Hit-test for hover
 		let idx = hitTest(e.clientX, e.clientY);
 		if (idx !== hoveredIdx) {
 			hoveredIdx = idx;
-			canvas.style.cursor = idx >= 0 ? 'pointer' : 'grab';
 		}
-		if (hoveredIdx >= 0) dirty = true;
 
 		if (!isDragging) return;
 		let dx = e.clientX - dragStartX;
 		if (Math.abs(dx) > dragThreshold) dragMoved = true;
 		if (dragMoved) {
 			inertia.track(e.clientX, w, viewEnd - viewStart);
-
-			let span = viewEnd - viewStart;
-			let shift = -(dx / w) * span;
+			let sp = viewEnd - viewStart;
+			let shift = -(dx / w) * sp;
 			targetStart = dragStartView + shift;
-			targetEnd = targetStart + span;
+			targetEnd = targetStart + sp;
 			viewStart = targetStart;
 			viewEnd = targetEnd;
 			clampView();
 			clampTarget();
-			dirty = true;
 		}
 	}
 
+	/** @param {MouseEvent} e */
 	function onMouseUp(e) {
 		if (isDragging && !dragMoved) {
-			// Click: zoom into subtree
 			let idx = hitTest(e.clientX, e.clientY);
 			if (idx >= 0) {
 				if (idx === zoomedBar) {
-					// Already zoomed here — zoom out to full
 					targetStart = 0;
 					targetEnd = 1;
 					zoomedBar = -1;
@@ -398,10 +416,13 @@
 					zoomedBar = idx;
 				}
 				clampTarget();
-				dirty = true;
+				startAnimation();
 			}
 		}
-		if (isDragging) inertia.staleCheck();
+		if (isDragging) {
+			inertia.staleCheck();
+			if (inertia.isMoving) startAnimation();
+		}
 		isDragging = false;
 	}
 
@@ -411,14 +432,14 @@
 
 	function onMouseLeave() {
 		isHovering = false;
+		mouseX = -1;
+		mouseY = -1;
 		if (hoveredIdx >= 0) {
 			hoveredIdx = -1;
-			dirty = true;
 		}
 	}
 
-	let isHovering = false;
-
+	/** @param {KeyboardEvent} e */
 	function onKeydown(e) {
 		if (!isHovering) return;
 		if (e.key === 'Escape' && (zoomedBar >= 0 || viewStart !== 0 || viewEnd !== 1)) {
@@ -426,11 +447,12 @@
 			targetEnd = 1;
 			zoomedBar = -1;
 			clampTarget();
-			dirty = true;
+			startAnimation();
 		}
 	}
 
 	// Touch handlers
+	/** @param {TouchEvent} e */
 	function onTouchStart(e) {
 		let touches = e.touches;
 		if (touches.length === 2) {
@@ -439,7 +461,7 @@
 			pinchStartDist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
 			pinchStartStart = targetStart;
 			pinchStartEnd = targetEnd;
-			let rect = canvas.getBoundingClientRect();
+			let rect = svgEl.getBoundingClientRect();
 			let midX = ((t0.clientX + t1.clientX) / 2) - rect.left;
 			pinchAnchorFrac = midX / w;
 			isDragging = false;
@@ -448,7 +470,7 @@
 		}
 		if (touches.length === 1) {
 			let t = touches[0];
-			let rect = canvas.getBoundingClientRect();
+			let rect = svgEl.getBoundingClientRect();
 			touchStartPos = { x: t.clientX - rect.left, y: t.clientY - rect.top };
 			touchLocked = null;
 			isDragging = true;
@@ -459,6 +481,7 @@
 		}
 	}
 
+	/** @param {TouchEvent} e */
 	function onTouchMove(e) {
 		let touches = e.touches;
 		if (touches.length === 2) {
@@ -466,18 +489,18 @@
 			let t0 = touches[0], t1 = touches[1];
 			let dist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
 			let scale = pinchStartDist / dist;
-			let span = (pinchStartEnd - pinchStartStart) * scale;
-			span = Math.max(minSpan, Math.min(1, span));
+			let sp = (pinchStartEnd - pinchStartStart) * scale;
+			sp = Math.max(minSpan, Math.min(1, sp));
 			let anchor = pinchStartStart + pinchAnchorFrac * (pinchStartEnd - pinchStartStart);
-			targetStart = anchor - pinchAnchorFrac * span;
-			targetEnd = targetStart + span;
+			targetStart = anchor - pinchAnchorFrac * sp;
+			targetEnd = targetStart + sp;
 			clampTarget();
-			dirty = true;
+			startAnimation();
 			return;
 		}
 		if (touches.length === 1 && touchStartPos) {
 			let t = touches[0];
-			let rect = canvas.getBoundingClientRect();
+			let rect = svgEl.getBoundingClientRect();
 			let tx = t.clientX - rect.left;
 			let ty = t.clientY - rect.top;
 
@@ -492,19 +515,17 @@
 			if (touchLocked === 'pan') {
 				e.preventDefault();
 				inertia.track(t.clientX, w, viewEnd - viewStart);
-
 				let dx = t.clientX - dragStartX;
 				if (Math.abs(dx) > dragThreshold) dragMoved = true;
 				if (dragMoved) {
-					let span = viewEnd - viewStart;
-					let shift = -(dx / w) * span;
+					let sp = viewEnd - viewStart;
+					let shift = -(dx / w) * sp;
 					targetStart = dragStartView + shift;
-					targetEnd = targetStart + span;
+					targetEnd = targetStart + sp;
 					viewStart = targetStart;
 					viewEnd = targetEnd;
 					clampView();
 					clampTarget();
-					dirty = true;
 				}
 			} else if (touchLocked === 'scroll') {
 				isDragging = false;
@@ -512,20 +533,38 @@
 		}
 	}
 
-	function onTouchEnd() {
-		inertia.staleCheck();
+	/** @param {TouchEvent} e */
+	function onTouchEnd(e) {
+		if (e.touches.length === 0 && isDragging && !dragMoved && touchStartPos) {
+			let idx = hitTest(
+				touchStartPos.x + svgEl.getBoundingClientRect().left,
+				touchStartPos.y + svgEl.getBoundingClientRect().top
+			);
+			if (idx >= 0) {
+				if (idx === zoomedBar) {
+					targetStart = 0;
+					targetEnd = 1;
+					zoomedBar = -1;
+				} else {
+					let bar = bars[idx];
+					targetStart = bar.startFrac;
+					targetEnd = bar.startFrac + bar.widthFrac;
+					zoomedBar = idx;
+				}
+				clampTarget();
+				startAnimation();
+			}
+		}
+		if (isDragging) {
+			inertia.staleCheck();
+			if (inertia.isMoving) startAnimation();
+		}
 		isDragging = false;
 		touchStartPos = null;
 		touchLocked = null;
 	}
 
-	// Reactivity
-	$: if (root) {
-		flatten(root);
-		dirty = true;
-		if (canvas) resize();
-	}
-
+	// Search reactivity
 	$: {
 		let s = search.toLowerCase();
 		matchSet = new Set();
@@ -536,48 +575,131 @@
 				}
 			}
 		}
-		dirty = true;
 	}
 
-	onMount(() => {
-		ctx = canvas.getContext('2d');
+	// --- Resize ---
+
+	function resize() {
+		if (!svgEl) return;
+		w = svgEl.getBoundingClientRect().width;
+	}
+
+	// --- Lifecycle ---
+
+	onMount(async () => {
 		resize();
-		raf = requestAnimationFrame(draw);
+		await document.fonts.ready;
+		let c = document.createElement('canvas');
+		measureCtx = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+		svgEl.addEventListener('wheel', onWheel, { passive: false });
+		svgEl.addEventListener('touchstart', onTouchStart, { passive: false });
+		svgEl.addEventListener('touchmove', onTouchMove, { passive: false });
+		svgEl.addEventListener('touchend', onTouchEnd);
 		window.addEventListener('resize', resize);
 		window.addEventListener('mousemove', onMouseMove);
 		window.addEventListener('mouseup', onMouseUp);
-		canvas.addEventListener('wheel', onWheel, { passive: false });
-		canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-		canvas.addEventListener('touchmove', onTouchMove, { passive: false });
-		canvas.addEventListener('touchend', onTouchEnd);
 	});
 
 	onDestroy(() => {
 		hint.destroy();
-		if (typeof cancelAnimationFrame !== 'undefined') {
+		if (typeof window !== 'undefined') {
 			cancelAnimationFrame(raf);
 			window.removeEventListener('resize', resize);
 			window.removeEventListener('mousemove', onMouseMove);
 			window.removeEventListener('mouseup', onMouseUp);
-			canvas.removeEventListener('wheel', onWheel);
-			canvas.removeEventListener('touchstart', onTouchStart);
-			canvas.removeEventListener('touchmove', onTouchMove);
-			canvas.removeEventListener('touchend', onTouchEnd);
+			svgEl?.removeEventListener('wheel', onWheel);
+			svgEl?.removeEventListener('touchstart', onTouchStart);
+			svgEl?.removeEventListener('touchmove', onTouchMove);
+			svgEl?.removeEventListener('touchend', onTouchEnd);
 		}
 	});
+
+	// --- Color helpers for template ---
+
+	/** @param {{ node: FlameNode, colorIdx: number, isHovered: boolean }} vbar */
+	function barFill(vbar) {
+		if (vbar.node.color) return vbar.node.color;
+		let name = PALETTE_NAMES[vbar.colorIdx];
+		return vbar.isHovered ? `var(--${name})` : `var(--${name}-dim)`;
+	}
+
+	/** @param {{ dimmed: boolean }} vbar */
+	function barOpacity(vbar) {
+		return vbar.dimmed ? 0.25 : 1;
+	}
 </script>
 
 <svelte:window on:keydown={onKeydown} />
 
 <ScrollHint visible={$hintVisible}>
-	<canvas
-		bind:this={canvas}
+	<svg
+		bind:this={svgEl}
+		width="100%"
+		height={h}
+		class="flame-chart {cursorClass}"
 		on:mousedown={onMouseDown}
 		on:mouseenter={onMouseEnter}
 		on:mouseleave={onMouseLeave}
-		class="flame-chart"
-		class:dragging={isDragging && dragMoved}
-	></canvas>
+	>
+		<defs>
+			<clipPath id={clipId}>
+				<rect x="0" y="0" width={w} height={h} />
+			</clipPath>
+		</defs>
+
+		<g clip-path="url(#{clipId})" opacity={ready ? 1 : 0}>
+			<!-- Grid lines -->
+			{#each gridLines as line}
+				<line x1={line.x} y1="0" x2={line.x} y2={h}
+					stroke="var(--bg3)" stroke-width="0.5" opacity={line.opacity} />
+			{/each}
+
+			<!-- Bars -->
+			{#each visibleBars as vbar (vbar.i)}
+				<rect x={vbar.x} y={vbar.y} width={vbar.w} height={vbar.h}
+					fill={barFill(vbar)}
+					opacity={barOpacity(vbar)}
+					rx="1" />
+
+				<!-- Hover outline -->
+				{#if vbar.isHovered}
+					<rect x={vbar.x} y={vbar.y} width={vbar.w} height={vbar.h}
+						fill="none" stroke="var(--fg)" stroke-width="1.5"
+						rx="1" />
+				{/if}
+
+				<!-- Search match outline -->
+				{#if vbar.isMatch && !vbar.isHovered}
+					{@const name = PALETTE_NAMES[vbar.colorIdx >= 0 ? vbar.colorIdx : 0]}
+					<rect x={vbar.x} y={vbar.y} width={vbar.w} height={vbar.h}
+						fill="none" stroke="var(--{name})" stroke-width="1"
+						rx="1" />
+				{/if}
+
+				<!-- Text label -->
+				{#if vbar.label}
+					<text x={vbar.textLeft} y={vbar.textY}
+						class="fc-label"
+						fill={vbar.dimmed ? 'var(--fg4)' : 'var(--fg)'}
+						opacity={barOpacity(vbar)}>{vbar.label}</text>
+				{/if}
+			{/each}
+
+			<!-- Tooltip -->
+			{#if tipData}
+				<rect x={tipData.x} y={tipData.y} width={tipData.w} height={tipData.h}
+					rx="3" fill="var(--bg)" opacity="0.92" />
+				<rect x={tipData.x} y={tipData.y} width={tipData.w} height={tipData.h}
+					rx="3" fill="none" stroke="var(--bg3)" stroke-width="1" />
+				{#each tipData.lines as line, j}
+					<text x={tipData.x + tipData.padX}
+						y={tipData.y + tipData.padY + j * tipData.lineH + tipData.lineH / 2}
+						class="fc-tip"
+						fill={j === 0 ? 'var(--fg)' : 'var(--fg4)'}>{line}</text>
+				{/each}
+			{/if}
+		</g>
+	</svg>
 </ScrollHint>
 
 <style>
@@ -588,9 +710,25 @@
 		touch-action: pan-y;
 		border: 1px dashed var(--bg3);
 		border-radius: 0.4rem;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 
-	.flame-chart.dragging {
-		cursor: grabbing;
+	.flame-chart.dragging { cursor: grabbing; }
+	.flame-chart.hovering { cursor: pointer; }
+
+	.flame-chart text {
+		font-family: 'Fira Mono', monospace;
+		pointer-events: none;
+	}
+
+	.fc-label {
+		font-size: 13px;
+		dominant-baseline: central;
+	}
+
+	.fc-tip {
+		font-size: 12px;
+		dominant-baseline: central;
 	}
 </style>
