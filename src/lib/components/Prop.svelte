@@ -72,6 +72,8 @@
 		display: flex;
 		align-items: center;
 		gap: 0.25rem;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 
 	.prop-name.has-tip {
