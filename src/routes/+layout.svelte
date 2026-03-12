@@ -339,15 +339,6 @@
 							</div>
 						</a>
 					{/each}
-					{#each Array(20) as _, i}
-						<a href="#dummy-{i}">
-							<div class="col">
-								<span class="title">Dummy Post {i + 1}</span>
-								<span class="subtitle">Testing sidebar scroll</span>
-								<span class="date">1st January 2025</span>
-							</div>
-						</a>
-					{/each}
 				</div>
 			</nav>
 		{/if}

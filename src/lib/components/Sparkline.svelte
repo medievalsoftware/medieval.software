@@ -5,7 +5,7 @@
 	export let data = [];
 	/** @type {string} CSS color or var(--name) */
 	export let color = 'var(--aqua)';
-	/** @type {number} canvas height in CSS px */
+	/** @type {number} height in CSS px */
 	export let height = 32;
 	/** @type {number} */
 	export let min = 0;
@@ -22,238 +22,258 @@
 	/** @type {(value: number, index: number) => string} custom hover label formatter */
 	export let format = null;
 
-	let canvas;
-	let ctx;
+	/** @type {SVGSVGElement} */
+	let svgEl;
 	let w = 0;
 	let h = 0;
-	let dpr = 1;
-	let dirty = true;
-	let resolvedColor = '#8ec07c';
-	let fgColor = '#ebdbb2';
-	let bgColor = '#282828';
-
-	// Hover state
 	let hoverIdx = -1;
+	let isTouching = false;
 
-	function resolveColors() {
-		if (!canvas) return;
-		let style = getComputedStyle(canvas);
-		if (color.startsWith('var(')) {
-			let varName = color.slice(4, -1).trim();
-			resolvedColor = style.getPropertyValue(varName).trim() || '#8ec07c';
-		} else {
-			resolvedColor = color;
-		}
-		fgColor = style.getPropertyValue('--fg').trim() || '#ebdbb2';
-		bgColor = style.getPropertyValue('--bg').trim() || '#282828';
-	}
+	// --- Layout ---
 
 	function resize() {
-		if (!canvas) return;
-		let rect = canvas.getBoundingClientRect();
-		dpr = window.devicePixelRatio || 1;
-		w = rect.width;
+		if (!svgEl) return;
+		w = svgEl.getBoundingClientRect().width;
 		h = height;
-		canvas.width = w * dpr;
-		canvas.height = h * dpr;
-		canvas.style.height = h + 'px';
-		resolveColors();
-		dirty = true;
 	}
 
+	/**
+	 * @param {number} i
+	 * @param {number} len
+	 */
 	function idxToX(i, len) {
 		return (i / (len - 1 || 1)) * w;
 	}
 
-	function draw() {
-		if (!ctx || !w || !dirty) return;
-		dirty = false;
+	/**
+	 * @param {number} v
+	 * @param {number} range
+	 */
+	function valToY(v, range) {
+		return h - ((v - min) / range) * h;
+	}
 
-		let len = data.length;
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		ctx.clearRect(0, 0, w, h);
-		if (len === 0) return;
+	// --- Computed SVG data ---
+
+	/**
+	 * @param {Float32Array | number[]} d
+	 * @param {number} width
+	 * @param {number} height
+	 */
+	function computePaths(d, width, height) {
+		let len = d.length;
+		if (len === 0 || width <= 0) return null;
 
 		let range = max - min;
 		if (range === 0) range = 1;
 
-		function valToY(v) {
-			return h - ((v - min) / range) * h;
-		}
-
-		let cols = Math.ceil(w);
-		let resolved = resolvedColor;
+		let cols = Math.ceil(width);
 
 		if (len <= cols * 2) {
-			// Few samples: draw as line/fill per sample
-			ctx.beginPath();
+			// Few samples: line per sample
+			let pts = '';
 			for (let i = 0; i < len; i++) {
 				let x = idxToX(i, len);
-				let y = valToY(data[i] || 0);
-				if (i === 0) ctx.moveTo(x, y);
-				else ctx.lineTo(x, y);
+				let y = valToY(d[i] || 0, range);
+				pts += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
 			}
-
-			if (strokeWidth > 0) {
-				ctx.strokeStyle = resolved;
-				ctx.lineWidth = strokeWidth;
-				ctx.stroke();
-			}
-
+			let fillPath = null;
 			if (filled) {
-				ctx.lineTo(w, h);
-				ctx.lineTo(0, h);
-				ctx.closePath();
-				ctx.fillStyle = resolved;
-				ctx.fill();
+				fillPath = pts + `L${width.toFixed(1)},${height}L0,${height}Z`;
 			}
+			return { linePath: pts, fillPath, mode: 'line' };
 		} else {
 			// Many samples: min/max envelope per pixel column
-			let maxYs = new Array(cols);
-			let minYs = new Array(cols);
-			let count = 0;
+			/** @type {number[]} */
+			let maxYs = [];
+			/** @type {number[]} */
+			let minYs = [];
 			for (let px = 0; px < cols; px++) {
 				let s = Math.floor((px / cols) * len);
 				let e = Math.min(len, Math.floor(((px + 1) / cols) * len));
 				let mn = Infinity, mx = -Infinity;
 				for (let i = s; i < e; i++) {
-					let v = data[i] || 0;
+					let v = d[i] || 0;
 					if (v < mn) mn = v;
 					if (v > mx) mx = v;
 				}
 				if (mn === Infinity) continue;
-				maxYs[count] = valToY(mx);
-				minYs[count] = valToY(mn);
-				count++;
+				maxYs.push(valToY(mx, range));
+				minYs.push(valToY(mn, range));
 			}
-			if (count > 0) {
-				ctx.beginPath();
-				ctx.moveTo(0, maxYs[0]);
+			if (maxYs.length === 0) return null;
+
+			let count = maxYs.length;
+			if (filled) {
+				let path = 'M0,' + maxYs[0].toFixed(1);
 				for (let i = 1; i < count; i++) {
-					ctx.lineTo(i, maxYs[i]);
+					path += 'L' + i + ',' + maxYs[i].toFixed(1);
 				}
-				if (filled) {
-					for (let i = count - 1; i >= 0; i--) {
-						ctx.lineTo(i, minYs[i]);
-					}
-					ctx.closePath();
-					ctx.fillStyle = resolved;
-					ctx.fill();
-				} else {
-					ctx.strokeStyle = resolved;
-					ctx.lineWidth = strokeWidth || 1;
-					ctx.stroke();
-					ctx.beginPath();
-					ctx.moveTo(0, minYs[0]);
-					for (let i = 1; i < count; i++) {
-						ctx.lineTo(i, minYs[i]);
-					}
-					ctx.stroke();
+				for (let i = count - 1; i >= 0; i--) {
+					path += 'L' + i + ',' + minYs[i].toFixed(1);
 				}
+				path += 'Z';
+				return { linePath: null, fillPath: path, mode: 'envelope' };
+			} else {
+				let topPath = 'M0,' + maxYs[0].toFixed(1);
+				for (let i = 1; i < count; i++) {
+					topPath += 'L' + i + ',' + maxYs[i].toFixed(1);
+				}
+				let bottomPath = 'M0,' + minYs[0].toFixed(1);
+				for (let i = 1; i < count; i++) {
+					bottomPath += 'L' + i + ',' + minYs[i].toFixed(1);
+				}
+				return { linePath: topPath, fillPath: bottomPath, mode: 'envelope-stroke' };
 			}
-		}
-
-		// Hover crosshair + dot + label
-		if (hover && hoverIdx >= 0 && hoverIdx < len) {
-			let x = idxToX(hoverIdx, len);
-			let val = data[hoverIdx] || 0;
-			let y = valToY(val);
-
-			// Vertical line
-			ctx.strokeStyle = fgColor;
-			ctx.globalAlpha = 0.3;
-			ctx.lineWidth = 1;
-			ctx.beginPath();
-			ctx.moveTo(x, 0);
-			ctx.lineTo(x, h);
-			ctx.stroke();
-			ctx.globalAlpha = 1;
-
-			// Dot
-			ctx.fillStyle = resolved;
-			ctx.beginPath();
-			ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-			ctx.fill();
-			ctx.strokeStyle = fgColor;
-			ctx.lineWidth = 1.5;
-			ctx.stroke();
-
-			// Label
-			let label = format ? format(val, hoverIdx) : val.toFixed(precision);
-			ctx.font = "12px 'Fira Mono', monospace";
-			let tw = ctx.measureText(label).width;
-			let padX = 4, padY = 2;
-			let lw = tw + padX * 2;
-			let lh = 14;
-			let lx = x + 8;
-			let ly = Math.max(1, Math.min(h - lh - 1, y - lh / 2));
-			// Flip to left side if it would overflow
-			if (lx + lw > w - 2) lx = x - 8 - lw;
-
-			ctx.fillStyle = bgColor;
-			ctx.globalAlpha = 0.85;
-			ctx.beginPath();
-			ctx.roundRect(lx, ly, lw, lh, 2);
-			ctx.fill();
-			ctx.globalAlpha = 1;
-
-			ctx.fillStyle = fgColor;
-			ctx.textAlign = 'left';
-			ctx.textBaseline = 'middle';
-			ctx.fillText(label, lx + padX, ly + lh / 2);
 		}
 	}
 
-	function onMouseMove(e) {
-		if (!hover || data.length === 0) return;
-		let rect = canvas.getBoundingClientRect();
-		let mx = e.clientX - rect.left;
+	$: paths = computePaths(data, w, h);
+
+	// --- Hover data ---
+
+	$: hoverData = (() => {
+		if (!hover || hoverIdx < 0 || hoverIdx >= data.length || w <= 0) return null;
+		let range = max - min || 1;
+		let val = data[hoverIdx] || 0;
+		let x = idxToX(hoverIdx, data.length);
+		let y = valToY(val, range);
+		let label = format ? format(val, hoverIdx) : val.toFixed(precision);
+		// Position label to right, flip to left if overflow
+		let lx = x + 8;
+		let labelW = label.length * 7.5 + 8;
+		if (lx + labelW > w - 2) lx = x - 8 - labelW;
+		let ly = Math.max(1, Math.min(h - 15, y - 7));
+		return { x, y, label, lx, ly, labelW };
+	})();
+
+	// --- Mouse events ---
+
+	/**
+	 * @param {number} clientX
+	 */
+	function updateHoverFromClientX(clientX) {
+		if (!hover || data.length === 0 || !svgEl) return;
+		let rect = svgEl.getBoundingClientRect();
+		let mx = clientX - rect.left;
 		let frac = mx / w;
 		let idx = Math.round(frac * (data.length - 1));
 		idx = Math.max(0, Math.min(data.length - 1, idx));
-		if (idx !== hoverIdx) {
-			hoverIdx = idx;
-			dirty = true;
-			draw();
-		}
+		if (idx !== hoverIdx) hoverIdx = idx;
+	}
+
+	/** @param {MouseEvent} e */
+	function onMouseMove(e) {
+		if (isTouching) return;
+		updateHoverFromClientX(e.clientX);
 	}
 
 	function onMouseLeave() {
-		if (hoverIdx >= 0) {
-			hoverIdx = -1;
-			dirty = true;
-			draw();
-		}
+		if (isTouching) return;
+		if (hoverIdx >= 0) hoverIdx = -1;
 	}
 
-	$: if (data) dirty = true;
-	$: if (color && canvas) { resolveColors(); dirty = true; }
-	$: if (dirty && ctx) draw();
+	// --- Touch events ---
+
+	/** @param {TouchEvent} e */
+	function onTouchStart(e) {
+		if (!hover || e.touches.length !== 1) return;
+		e.preventDefault();
+		isTouching = true;
+		updateHoverFromClientX(e.touches[0].clientX);
+	}
+
+	/** @param {TouchEvent} e */
+	function onTouchMove(e) {
+		if (!isTouching || e.touches.length !== 1) return;
+		e.preventDefault();
+		updateHoverFromClientX(e.touches[0].clientX);
+	}
+
+	/** @param {TouchEvent} e */
+	function onTouchEnd(e) {
+		if (!isTouching) return;
+		isTouching = false;
+		hoverIdx = -1;
+	}
+
+	// --- Lifecycle ---
 
 	onMount(() => {
-		ctx = canvas.getContext('2d');
 		resize();
-		draw();
+		svgEl.addEventListener('touchstart', onTouchStart, { passive: false });
+		svgEl.addEventListener('touchmove', onTouchMove, { passive: false });
+		svgEl.addEventListener('touchend', onTouchEnd);
 		window.addEventListener('resize', resize);
 	});
 
 	onDestroy(() => {
 		if (typeof window !== 'undefined') {
 			window.removeEventListener('resize', resize);
+			svgEl?.removeEventListener('touchstart', onTouchStart);
+			svgEl?.removeEventListener('touchmove', onTouchMove);
+			svgEl?.removeEventListener('touchend', onTouchEnd);
 		}
 	});
 </script>
 
-<canvas
-	bind:this={canvas}
+<svg
+	bind:this={svgEl}
+	width="100%"
+	height={h}
+	class="sparkline"
 	on:mousemove={onMouseMove}
 	on:mouseleave={onMouseLeave}
-	class="sparkline"
-></canvas>
+>
+	{#if paths}
+		{#if paths.fillPath}
+			<path
+				d={paths.fillPath}
+				fill={filled ? color : 'none'}
+				stroke={filled ? color : color}
+				stroke-width={filled ? '1' : (strokeWidth || 1)}
+			/>
+		{/if}
+		{#if paths.linePath && strokeWidth > 0}
+			<path d={paths.linePath} fill="none" stroke={color} stroke-width={strokeWidth} />
+		{/if}
+		{#if paths.mode === 'envelope-stroke' && paths.fillPath}
+			<path d={paths.fillPath} fill="none" stroke={color} stroke-width={strokeWidth || 1} />
+		{/if}
+	{/if}
+
+	{#if hoverData}
+		<!-- Crosshair -->
+		<line
+			x1={hoverData.x} y1={0}
+			x2={hoverData.x} y2={h}
+			stroke="var(--fg)" stroke-width="1" opacity="0.3"
+		/>
+		<!-- Dot -->
+		<circle
+			cx={hoverData.x} cy={hoverData.y} r="3.5"
+			fill={color} stroke="var(--fg)" stroke-width="1.5"
+		/>
+		<!-- Label bg -->
+		<rect
+			x={hoverData.lx} y={hoverData.ly}
+			width={hoverData.labelW} height={14}
+			rx="2" fill="var(--bg)" opacity="0.85"
+		/>
+		<!-- Label text -->
+		<text
+			x={hoverData.lx + 4} y={hoverData.ly + 7}
+			fill="var(--fg)"
+			font-size="12" font-family="'Fira Mono', monospace"
+			dominant-baseline="central"
+		>{hoverData.label}</text>
+	{/if}
+</svg>
 
 <style>
 	.sparkline {
 		display: block;
 		width: 100%;
+		touch-action: none;
 	}
 </style>
