@@ -158,7 +158,6 @@
 		font-weight: bold;
 		font-size: 0.85em;
 		cursor: ew-resize;
-		user-select: none;
 		touch-action: none;
 	}
 
@@ -194,7 +193,6 @@
 		align-items: center;
 		justify-content: flex-end;
 		cursor: text;
-		user-select: none;
 	}
 
 	.num-field {

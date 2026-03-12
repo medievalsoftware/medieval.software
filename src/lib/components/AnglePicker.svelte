@@ -65,10 +65,11 @@
 <style>
 	.angle-picker {
 		width: 100%;
+		min-width: 80px;
+		max-width: 120px;
 		aspect-ratio: 1 / 1;
 		cursor: crosshair;
 		touch-action: none;
-		user-select: none;
 	}
 
 	svg {

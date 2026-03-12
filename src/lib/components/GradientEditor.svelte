@@ -197,8 +197,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0;
-		user-select: none;
-		-webkit-user-select: none;
 		position: relative;
 	}
 

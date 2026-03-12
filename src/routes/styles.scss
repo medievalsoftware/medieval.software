@@ -4,6 +4,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans&family=Roboto:wght@400;500&display=swap');
 @import url('https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css');
 
+@mixin unselectable {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+@mixin selectable {
+  -webkit-touch-callout: default !important;
+  -webkit-user-select: text !important;
+  -khtml-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
 @font-face {
   font-family: 'Fira Mono';
   src: url("/font/FiraMonoNerdFontMono-Regular.otf");
@@ -217,6 +235,32 @@ main {
   overflow-y: auto;
   font-size: 1rem;
   box-sizing: border-box;
+}
+
+// Unselectable by default — Safari needs explicit per-element, not inheritance
+* {
+  @include unselectable;
+}
+
+// Prose elements opt back in
+p, h1, h2, h3, h4, h5, h6,
+li, td, th, blockquote, figcaption,
+pre, code, a, em, strong,
+summary, dt, dd,
+.selectable, .selectable * {
+  @include selectable;
+}
+
+// Navigation is never selectable — !important to override prose rules above
+nav, nav *,
+.sidebar, .sidebar *,
+#mobile-bar, #mobile-bar * {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -khtml-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
 }
 
 #mobile-posts,
@@ -458,6 +502,7 @@ nav a.active {
   align-items: stretch;
   height: 100vh;
 }
+
 
 @media only screen and (min-width: 1025px) {
   .app {

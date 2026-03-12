@@ -717,8 +717,6 @@
 		touch-action: pan-y;
 		border: 1px dashed var(--bg3);
 		border-radius: 0.4rem;
-		user-select: none;
-		-webkit-user-select: none;
 	}
 
 	.flame-chart.dragging { cursor: grabbing; }

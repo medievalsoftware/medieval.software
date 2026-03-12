@@ -754,7 +754,6 @@
 		border-radius: var(--radius, 3px);
 		cursor: crosshair;
 		touch-action: none;
-		user-select: none;
 		overflow: visible;
 		outline: none;
 	}

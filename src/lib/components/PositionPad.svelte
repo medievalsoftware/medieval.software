@@ -74,6 +74,7 @@
 	.pos-pad {
 		position: relative;
 		width: 100%;
+		max-width: 200px;
 		aspect-ratio: 2 / 1;
 		background: var(--bg);
 		border: 1px solid var(--bg3);
@@ -81,7 +82,6 @@
 		cursor: crosshair;
 		overflow: hidden;
 		touch-action: none;
-		user-select: none;
 	}
 
 	.pos-grid {

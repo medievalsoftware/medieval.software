@@ -548,7 +548,7 @@
 		if (Math.abs(dy) > 0) {
 			let zoomAnchorFrac = (mx - margin.left) / contentW;
 			let monthUnderCursor = targetViewStart + zoomAnchorFrac * targetViewMonths;
-			let zoomFactor = 1 + dy * 0.003;
+			let zoomFactor = 1 + dy * 0.01;
 			targetViewMonths *= zoomFactor;
 			targetViewMonths = Math.max(minViewMonths, Math.min(totalMonths, targetViewMonths));
 			targetViewStart = monthUnderCursor - zoomAnchorFrac * targetViewMonths;
@@ -867,8 +867,6 @@
 		touch-action: pan-y;
 		border: 1px dashed var(--bg3);
 		border-radius: 0.4rem;
-		user-select: none;
-		-webkit-user-select: none;
 	}
 
 	.timeline.dragging { cursor: grabbing; }

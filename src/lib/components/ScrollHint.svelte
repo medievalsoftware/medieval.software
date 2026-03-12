@@ -28,8 +28,6 @@
 		padding: 0.4rem 0.8rem;
 		border-radius: 0.4rem;
 		pointer-events: none;
-		user-select: none;
-		-webkit-user-select: none;
 		animation: hint-fade 1.5s ease-out forwards;
 		white-space: nowrap;
 	}

@@ -239,6 +239,7 @@
 		overflow: hidden;
 	}
 
+
 	.p5-panel-header {
 		display: flex;
 		align-items: center;
@@ -355,7 +356,6 @@
 		border-bottom: 1px solid var(--bg1);
 		font-size: 0.85em;
 		cursor: default;
-		user-select: none;
 	}
 
 	.p5-props :global(.p5-readout-label) {
@@ -397,7 +397,6 @@
 		min-height: 1.8em;
 		border-bottom: 1px solid var(--bg1);
 		cursor: pointer;
-		user-select: none;
 		white-space: nowrap;
 	}
 

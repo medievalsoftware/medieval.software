@@ -99,7 +99,6 @@
 		border-radius: var(--radius);
 		cursor: pointer;
 		touch-action: none;
-		user-select: none;
 	}
 
 	.slider-track {

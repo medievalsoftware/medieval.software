@@ -434,7 +434,7 @@
 		}
 
 		if (Math.abs(dy) > 0) {
-			let zoomFactor = 1 + dy * 0.003;
+			let zoomFactor = 1 + dy * 0.01;
 			let anchor = targetStart + frac * span;
 			let newSpan = span * zoomFactor;
 			newSpan = Math.max(minSpan, Math.min(1, newSpan));
@@ -874,8 +874,6 @@
 		border: 1px dashed var(--bg3);
 		border-radius: 0.4rem;
 		box-sizing: content-box;
-		user-select: none;
-		-webkit-user-select: none;
 	}
 
 	.waveform.dragging { cursor: grabbing; }
