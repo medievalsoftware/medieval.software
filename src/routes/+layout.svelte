@@ -230,7 +230,8 @@
 			<div class="group">
 				<h2>Showcases</h2>
 				<div class="page-cards">
-					<a class="page-card" href="/voice-reels" on:click={() => { show.showcases = false; show.content = true; scroll_to_top(); }}>
+					<a class="page-card coming-soon" href="#">
+						<div class="ribbon">In the Works</div>
 						<div class="page-card-icon"><img src="/images/theatre_mask.png" alt="Voice Reels" /></div>
 						<div class="page-card-info">
 							<span class="name">Voice Reels</span>
@@ -392,7 +393,8 @@
 				<div class="group">
 					<h2>Showcases</h2>
 					<div class="page-cards">
-						<a class="page-card" href="/voice-reels">
+						<a class="page-card coming-soon" href="#">
+							<div class="ribbon">In the Works</div>
 							<div class="page-card-icon"><img src="/images/theatre_mask.png" alt="Voice Reels" /></div>
 							<div class="page-card-info">
 								<span class="name">Voice Reels</span>
