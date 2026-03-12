@@ -406,7 +406,6 @@
 	}
 
 	.p5-props :global(input[type="range"]) {
-		-webkit-appearance: none;
 		appearance: none;
 		flex: 1;
 		min-width: 0;
@@ -418,7 +417,6 @@
 	}
 
 	.p5-props :global(input[type="range"]::-webkit-slider-thumb) {
-		-webkit-appearance: none;
 		appearance: none;
 		width: 5px;
 		height: 1.1em;
@@ -438,7 +436,6 @@
 	}
 
 	.p5-props :global(input[type="color"]) {
-		-webkit-appearance: none;
 		appearance: none;
 		width: 28px;
 		height: 20px;
@@ -459,7 +456,6 @@
 	}
 
 	.p5-props :global(select) {
-		-webkit-appearance: none;
 		appearance: none;
 		width: 100%;
 		padding: 0.3rem 0.5rem;
@@ -532,7 +528,6 @@
 	}
 
 	.p5-props :global(.p5-radio input[type="radio"]) {
-		-webkit-appearance: none;
 		appearance: none;
 		width: 12px;
 		height: 12px;
@@ -561,7 +556,6 @@
 	}
 
 	.p5-props :global(input[type="checkbox"]) {
-		-webkit-appearance: none;
 		appearance: none;
 		width: 28px;
 		height: 16px;
@@ -596,7 +590,7 @@
 		transform: translateX(12px);
 	}
 
-	@media only screen and (max-width: 1024px) {
+	@media (max-width: 1024px) {
 		.p5-wrapper {
 			flex-direction: column;
 		}

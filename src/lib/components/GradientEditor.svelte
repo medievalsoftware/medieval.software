@@ -267,7 +267,6 @@
 	}
 
 	.gradient-color-input {
-		-webkit-appearance: none;
 		appearance: none;
 		position: absolute;
 		bottom: 0;

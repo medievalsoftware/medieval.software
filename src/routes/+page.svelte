@@ -197,7 +197,7 @@
 		opacity: 0.8;
 	}
 
-	@media only screen and (max-width: 1024px) {
+	@media (max-width: 1024px) {
 		#intro {
 			flex-direction: column;
 		}
