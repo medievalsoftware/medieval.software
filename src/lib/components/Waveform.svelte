@@ -26,6 +26,8 @@
 	let minSpan = 0.001;
 	const dragThreshold = 4;
 	const EDGE_GRAB = 6;
+	const TOUCH_EDGE_GRAB = 20;
+	const LONG_PRESS_MS = 350;
 
 	// --- State ---
 
@@ -68,6 +70,11 @@
 	let touchStartPos = null;
 	/** @type {string | null} */
 	let touchLocked = null;
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let longPressTimer = null;
+	let touchSelecting = false;
+	/** @type {string | null} */
+	let touchEdgeDrag = null;
 
 	// Animation
 	let raf = 0;
@@ -383,9 +390,10 @@
 
 	/**
 	 * @param {number} clientX
+	 * @param {number} [grab] grab distance in px
 	 * @returns {string | null}
 	 */
-	function hitTestSelEdge(clientX) {
+	function hitTestSelEdge(clientX, grab = EDGE_GRAB) {
 		if (!selection || !svgEl) return null;
 		let rect = svgEl.getBoundingClientRect();
 		let mx = clientX - rect.left;
@@ -396,8 +404,8 @@
 		let rightX = idxToX(selection.end, len) + halfPx;
 		let dLeft = Math.abs(mx - leftX);
 		let dRight = Math.abs(mx - rightX);
-		if (dLeft <= EDGE_GRAB && dLeft <= dRight) return 'left';
-		if (dRight <= EDGE_GRAB) return 'right';
+		if (dLeft <= grab && dLeft <= dRight) return 'left';
+		if (dRight <= grab) return 'right';
 		return null;
 	}
 
@@ -551,11 +559,22 @@
 		isDragging = false;
 	}
 
+	function cancelLongPress() {
+		if (longPressTimer) {
+			clearTimeout(longPressTimer);
+			longPressTimer = null;
+		}
+	}
+
 	/** @param {TouchEvent} e */
 	function onTouchStart(e) {
 		let touches = e.touches;
+		cancelLongPress();
+
 		if (touches.length === 2) {
 			e.preventDefault();
+			touchSelecting = false;
+			touchEdgeDrag = null;
 			let t0 = touches[0], t1 = touches[1];
 			let rect = svgEl.getBoundingClientRect();
 			pinchStartDist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
@@ -572,11 +591,36 @@
 			let rect = svgEl.getBoundingClientRect();
 			touchStartPos = { x: t.clientX - rect.left, y: t.clientY - rect.top };
 			touchLocked = null;
+			touchSelecting = false;
+			touchEdgeDrag = null;
+
+			// Check if touching a selection edge first
+			let edge = hitTestSelEdge(t.clientX, TOUCH_EDGE_GRAB);
+			if (edge) {
+				e.preventDefault();
+				touchEdgeDrag = edge;
+				return;
+			}
+
 			isDragging = true;
 			dragStartX = t.clientX;
 			dragStartView = viewStart;
 			dragMoved = false;
 			inertia.start(t.clientX);
+
+			// Start long-press timer for selection
+			let startClientX = t.clientX;
+			longPressTimer = setTimeout(() => {
+				longPressTimer = null;
+				// Only activate if finger hasn't moved significantly
+				if (!dragMoved && touchLocked === null) {
+					e.preventDefault();
+					isDragging = false;
+					touchSelecting = true;
+					selDragStart = clientXToSample(startClientX);
+					selection = { start: selDragStart, end: selDragStart };
+				}
+			}, LONG_PRESS_MS);
 		}
 	}
 
@@ -584,6 +628,7 @@
 	function onTouchMove(e) {
 		let touches = e.touches;
 		if (touches.length === 2) {
+			cancelLongPress();
 			e.preventDefault();
 			let t0 = touches[0], t1 = touches[1];
 			let dist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
@@ -597,8 +642,35 @@
 			startAnimation();
 			return;
 		}
-		if (touches.length === 1 && touchStartPos) {
+		if (touches.length === 1) {
 			let t = touches[0];
+
+			// Edge drag on existing selection
+			if (touchEdgeDrag && selection) {
+				e.preventDefault();
+				let idx = clientXToSample(t.clientX);
+				idx = Math.max(0, Math.min(data.length - 1, idx));
+				if (touchEdgeDrag === 'left') {
+					selection = { start: Math.min(idx, selection.end), end: selection.end };
+				} else {
+					selection = { start: selection.start, end: Math.max(idx, selection.start) };
+				}
+				return;
+			}
+
+			// Long-press selection drag
+			if (touchSelecting) {
+				e.preventDefault();
+				let idx = clientXToSample(t.clientX);
+				idx = Math.max(0, Math.min(data.length - 1, idx));
+				selection = {
+					start: Math.min(selDragStart, idx),
+					end: Math.max(selDragStart, idx)
+				};
+				return;
+			}
+
+			if (!touchStartPos) return;
 			let rect = svgEl.getBoundingClientRect();
 			let tx = t.clientX - rect.left;
 			let ty = t.clientY - rect.top;
@@ -607,6 +679,7 @@
 				let dx = Math.abs(tx - touchStartPos.x);
 				let dy = Math.abs(ty - touchStartPos.y);
 				if (dx > dragThreshold || dy > dragThreshold) {
+					cancelLongPress();
 					touchLocked = dx > dy ? 'pan' : 'scroll';
 				}
 			}
@@ -636,6 +709,25 @@
 
 	/** @param {TouchEvent} e */
 	function onTouchEnd(e) {
+		cancelLongPress();
+
+		if (touchEdgeDrag) {
+			touchEdgeDrag = null;
+			touchStartPos = null;
+			return;
+		}
+
+		if (touchSelecting) {
+			touchSelecting = false;
+			touchStartPos = null;
+			return;
+		}
+
+		// Tap to clear selection
+		if (isDragging && !dragMoved && selection && e.touches.length === 0) {
+			selection = null;
+		}
+
 		if (isDragging) {
 			inertia.staleCheck();
 			if (inertia.isMoving) startAnimation();
@@ -670,6 +762,7 @@
 
 	onDestroy(() => {
 		hint.destroy();
+		cancelLongPress();
 		if (typeof window !== 'undefined') {
 			cancelAnimationFrame(raf);
 			window.removeEventListener('resize', resize);
