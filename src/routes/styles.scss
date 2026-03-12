@@ -227,10 +227,12 @@ main {
 }
 
 .sidebar {
+  position: relative;
   display: flex;
   flex-direction: row;
   height: 100vh;
   max-height: 100vh;
+  flex-shrink: 0;
 }
 
 nav {
@@ -307,6 +309,17 @@ nav a {
 
 nav.groups {
   background-color: var(--bg_h);
+}
+
+.sidebar nav.groups {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  z-index: 10;
+  border-right: 1px solid var(--bg1);
 }
 
 nav.groups a {
@@ -444,6 +457,12 @@ nav a.active {
   flex-direction: row;
   align-items: stretch;
   height: 100vh;
+}
+
+@media only screen and (min-width: 1025px) {
+  .app {
+    overflow: hidden;
+  }
 }
 
 ol,
@@ -732,6 +751,12 @@ blockquote p {
     border-right: 2px solid var(--bg_s);
     padding-left: 0.5em;
     padding-right: 0.5em;
+  }
+
+  #mobile-bar.sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
 
   #mobile-bar a.active {

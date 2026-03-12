@@ -49,13 +49,15 @@
 		show.showcases = false;
 	};
 
+	$: panelOpen = show.posts || show.pages || show.showcases || show.links;
+
 	/** @type {import('./$types').LayoutData} */
 	export let data;
 </script>
 
 <div class="app">
 	<!-- MOBILE -->
-	<div id="mobile-bar">
+	<div id="mobile-bar" class:sticky={panelOpen}>
 		<img class="logo" src="/images/logo-mobile.png" alt="Medieval Software Logo" />
 		<Link
 			caption="Home"
@@ -334,6 +336,15 @@
 								</span>
 								{#if post.subtitle}<span class="subtitle">{post.subtitle}</span>{/if}
 								<span class="date">{dateFormat(new Date(post.date), 'dS mmmm yyyy')}</span>
+							</div>
+						</a>
+					{/each}
+					{#each Array(20) as _, i}
+						<a href="#dummy-{i}">
+							<div class="col">
+								<span class="title">Dummy Post {i + 1}</span>
+								<span class="subtitle">Testing sidebar scroll</span>
+								<span class="date">1st January 2025</span>
 							</div>
 						</a>
 					{/each}
