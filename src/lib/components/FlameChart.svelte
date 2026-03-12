@@ -528,7 +528,8 @@
 					clampTarget();
 				}
 			} else if (touchLocked === 'scroll') {
-				isDragging = false;
+				// don't clear isDragging — allows tap-to-zoom when
+				// a slight vertical wobble locked to scroll
 			}
 		}
 	}
@@ -541,6 +542,12 @@
 				touchStartPos.y + svgEl.getBoundingClientRect().top
 			);
 			if (idx >= 0) {
+				// Prevent synthetic mousedown/mouseup from firing after touch,
+				// which would immediately toggle the zoom back out
+				e.preventDefault();
+				hoveredIdx = idx;
+				mouseX = touchStartPos.x;
+				mouseY = touchStartPos.y;
 				if (idx === zoomedBar) {
 					targetStart = 0;
 					targetEnd = 1;

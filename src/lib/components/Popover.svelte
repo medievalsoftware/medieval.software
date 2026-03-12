@@ -1,6 +1,7 @@
 <script>
 	import { onDestroy } from 'svelte';
 	import { computePosition } from '../floating.js';
+	import { portal } from '$lib/actions.js';
 
 	/** @type {'top'|'bottom'|'left'|'right'} */
 	export let placement = 'bottom';
@@ -68,6 +69,7 @@
 	<div
 		class="popover"
 		bind:this={floatingEl}
+		use:portal
 		style="left:{posX}px;top:{posY}px"
 	>
 		<div

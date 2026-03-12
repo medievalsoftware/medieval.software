@@ -318,7 +318,7 @@ nav.groups {
   height: 100vh;
   max-height: 100vh;
   overflow-y: auto;
-  z-index: 10;
+  z-index: calc(var(--floating-z) + 1);
   border-right: 1px solid var(--bg1);
 }
 
