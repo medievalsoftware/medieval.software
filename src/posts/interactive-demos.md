@@ -20,6 +20,7 @@ import Waveform from '$lib/components/Waveform.svelte';
 import FlameChart from '$lib/components/FlameChart.svelte';
 import Sparkline from '$lib/components/Sparkline.svelte';
 import Knob from '$lib/components/Knob.svelte';
+import SegmentedControl from '$lib/components/SegmentedControl.svelte';
 
 import Prop from '$lib/components/Prop.svelte';
 import { loadProps, saveProps } from '$lib/persist.js';
@@ -93,6 +94,16 @@ let knobInt = 5;
 let knobFloat = 0.75;
 let knobSpeed = 120;
 let knobMix = 50;
+
+// -- Segmented control demos --
+let segSize = 'md';
+let segMode = 'auto';
+
+// -- Vertical slider demos --
+let vSliderA = 75;
+let vSliderB = 50;
+let vSliderC = 30;
+let vSliderD = 60;
 
 // -- Helpers --
 function canvasBg(canvas) {
@@ -774,6 +785,34 @@ Most of the demonstrations in previous posts relied on recorded video of p5.js s
   <Knob bind:value={knobFloat} min={0} max={1} step={0} color="var(--orange)" label="Mix" size={48} />
   <Knob bind:value={knobSpeed} min={60} max={240} step={1} color="var(--blue)" label="BPM" size={48} />
   <Knob bind:value={knobMix} min={0} max={100} step={1} color="var(--aqua)" label="Wet" size={48} />
+</div>
+
+# Segmented Controls
+
+<div style="display:flex;flex-direction:column;gap:0.15rem;padding:0.5rem;background:var(--bg1);border:1px dashed var(--bg3);border-radius:var(--radius)">
+  <Prop name="Size"><SegmentedControl bind:value={segSize} options={['sm', 'md', 'lg', 'xl']} color="blue" /></Prop>
+  <Prop name="Mode"><SegmentedControl bind:value={segMode} options={['auto', 'manual', 'off']} color="aqua" /></Prop>
+</div>
+
+# Vertical Sliders
+
+<div style="display:flex;flex-direction:row;gap:0.75rem;padding:0.5rem;background:var(--bg1);border:1px dashed var(--bg3);border-radius:var(--radius);align-items:end;height:120px">
+  <div style="display:flex;flex-direction:column;align-items:center;height:100%;gap:0.25rem">
+    <span style="font-size:0.65em;color:var(--fg4)">{vSliderA}</span>
+    <Slider bind:value={vSliderA} min={0} max={100} step={1} color="blue" vertical />
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;height:100%;gap:0.25rem">
+    <span style="font-size:0.65em;color:var(--fg4)">{vSliderB}</span>
+    <Slider bind:value={vSliderB} min={0} max={100} step={1} color="aqua" vertical />
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;height:100%;gap:0.25rem">
+    <span style="font-size:0.65em;color:var(--fg4)">{vSliderC}</span>
+    <Slider bind:value={vSliderC} min={0} max={100} step={1} color="orange" vertical />
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;height:100%;gap:0.25rem">
+    <span style="font-size:0.65em;color:var(--fg4)">{vSliderD}</span>
+    <Slider bind:value={vSliderD} min={0} max={100} step={1} color="purple" vertical />
+  </div>
 </div>
 
 # Number Inputs

@@ -11,6 +11,8 @@
 	export let step = 1;
 	/** @type {string} gruvbox color name */
 	export let color = 'blue';
+	/** @type {boolean} vertical orientation */
+	export let vertical = false;
 
 	$: isRange = high !== null;
 
@@ -19,7 +21,9 @@
 
 	function valFromEvent(e) {
 		const rect = track.getBoundingClientRect();
-		const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+		const pct = vertical
+			? Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height))
+			: Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
 		let val = min + pct * (max - min);
 		if (step) val = Math.round(val / step) * step;
 		return Math.max(min, Math.min(max, val));
@@ -74,6 +78,7 @@
 
 <div class="slider"
 	class:range={isRange}
+	class:vertical
 	bind:this={track}
 	on:pointermove={onPointerMove}
 	on:pointerup={onPointerUp}
@@ -81,12 +86,12 @@
 	on:lostpointercapture={onPointerUp}
 	style="--fill-color: var(--{color}-dim)"
 >
-	<div class="slider-track" style="--left:{fillLeft}%;--right:{isRange ? 100 - highPct : 100 - valuePct}%"></div>
+	<div class="slider-track" style="--low:{fillLeft}%;--high:{isRange ? 100 - highPct : 100 - valuePct}%"></div>
 	{#if isRange}
-		<div class="slider-grip" style="left:{valuePct}%" on:pointerdown|stopPropagation={(e) => onGripDown(e, 'low')}></div>
-		<div class="slider-grip" style="left:{highPct}%" on:pointerdown|stopPropagation={(e) => onGripDown(e, 'high')}></div>
+		<div class="slider-grip" style="{vertical ? 'bottom' : 'left'}:{valuePct}%" on:pointerdown|stopPropagation={(e) => onGripDown(e, 'low')}></div>
+		<div class="slider-grip" style="{vertical ? 'bottom' : 'left'}:{highPct}%" on:pointerdown|stopPropagation={(e) => onGripDown(e, 'high')}></div>
 	{:else}
-		<div class="slider-grip" style="left:{valuePct}%" on:pointerdown|stopPropagation={(e) => onGripDown(e, 'value')}></div>
+		<div class="slider-grip" style="{vertical ? 'bottom' : 'left'}:{valuePct}%" on:pointerdown|stopPropagation={(e) => onGripDown(e, 'value')}></div>
 	{/if}
 </div>
 
@@ -101,6 +106,12 @@
 		touch-action: none;
 	}
 
+	.slider.vertical {
+		width: 1.4em;
+		height: 100%;
+		min-height: 80px;
+	}
+
 	.slider-track {
 		position: absolute;
 		top: 37.5%;
@@ -110,14 +121,32 @@
 		background: linear-gradient(
 			to right,
 			color-mix(in srgb, var(--fill-color) 30%, transparent) 0%,
-			color-mix(in srgb, var(--fill-color) 30%, transparent) var(--left),
-			color-mix(in srgb, var(--fill-color) 60%, transparent) var(--left),
-			color-mix(in srgb, var(--fill-color) 60%, transparent) calc(100% - var(--right)),
-			color-mix(in srgb, var(--fill-color) 30%, transparent) calc(100% - var(--right)),
+			color-mix(in srgb, var(--fill-color) 30%, transparent) var(--low),
+			color-mix(in srgb, var(--fill-color) 60%, transparent) var(--low),
+			color-mix(in srgb, var(--fill-color) 60%, transparent) calc(100% - var(--high)),
+			color-mix(in srgb, var(--fill-color) 30%, transparent) calc(100% - var(--high)),
 			color-mix(in srgb, var(--fill-color) 30%, transparent) 100%
 		);
 		border-radius: var(--radius);
 		pointer-events: none;
+	}
+
+	.vertical .slider-track {
+		top: 0;
+		bottom: 0;
+		height: auto;
+		left: 37.5%;
+		right: auto;
+		width: 25%;
+		background: linear-gradient(
+			to top,
+			color-mix(in srgb, var(--fill-color) 30%, transparent) 0%,
+			color-mix(in srgb, var(--fill-color) 30%, transparent) var(--low),
+			color-mix(in srgb, var(--fill-color) 60%, transparent) var(--low),
+			color-mix(in srgb, var(--fill-color) 60%, transparent) calc(100% - var(--high)),
+			color-mix(in srgb, var(--fill-color) 30%, transparent) calc(100% - var(--high)),
+			color-mix(in srgb, var(--fill-color) 30%, transparent) 100%
+		);
 	}
 
 	.slider-grip {
@@ -130,6 +159,15 @@
 		transform: translateX(-50%);
 		cursor: ew-resize;
 		touch-action: none;
+	}
+
+	.vertical .slider-grip {
+		top: auto;
+		left: 10%;
+		width: 80%;
+		height: 5px;
+		transform: translateY(50%);
+		cursor: ns-resize;
 	}
 
 	.slider-grip:hover,

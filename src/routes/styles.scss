@@ -4,6 +4,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans&family=Roboto:wght@400;500&display=swap');
 @import url('https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css');
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 @mixin unselectable {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -228,7 +232,6 @@ main {
   overflow-x: hidden;
   overflow-y: auto;
   font-size: 1rem;
-  box-sizing: border-box;
 }
 
 // Unselectable by default — Safari needs explicit per-element, not inheritance
@@ -330,7 +333,6 @@ nav a {
   align-items: center;
   min-width: max-content;
   width: 100%;
-  box-sizing: border-box;
 }
 
 .panel-arrow {
@@ -426,7 +428,6 @@ nav .page-card {
   padding: 0.3rem;
   border-radius: var(--radius);
   background: var(--bg1);
-  box-sizing: border-box;
   min-width: 0;
 }
 
@@ -768,7 +769,6 @@ blockquote p {
   #mobile-showcases {
     display: flex;
     flex: 1;
-    box-sizing: border-box;
     overflow: auto;
   }
 
