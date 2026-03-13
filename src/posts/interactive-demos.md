@@ -19,6 +19,7 @@ import Dropdown from '$lib/components/Dropdown.svelte';
 import Waveform from '$lib/components/Waveform.svelte';
 import FlameChart from '$lib/components/FlameChart.svelte';
 import Sparkline from '$lib/components/Sparkline.svelte';
+import Knob from '$lib/components/Knob.svelte';
 
 import Prop from '$lib/components/Prop.svelte';
 import { loadProps, saveProps } from '$lib/persist.js';
@@ -86,6 +87,12 @@ let sparkC = Array.from({ length: 150 }, (_, i) => {
 // -- Number input demos --
 let unboundVal = 42;
 let boundVal = 50;
+
+// -- Knob demos --
+let knobInt = 5;
+let knobFloat = 0.75;
+let knobSpeed = 120;
+let knobMix = 50;
 
 // -- Helpers --
 function canvasBg(canvas) {
@@ -759,6 +766,15 @@ Most of the demonstrations in previous posts relied on recorded video of p5.js s
   </div>
 </div>
 
+
+# Knobs
+
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:0.5rem;padding:0.5rem;background:var(--bg1);border:1px dashed var(--bg3);border-radius:var(--radius);align-items:start">
+  <Knob bind:value={knobInt} min={0} max={10} step={1} color="var(--blue)" label="Count" size={48} />
+  <Knob bind:value={knobFloat} min={0} max={1} step={0} color="var(--orange)" label="Mix" size={48} />
+  <Knob bind:value={knobSpeed} min={60} max={240} step={1} color="var(--blue)" label="BPM" size={48} />
+  <Knob bind:value={knobMix} min={0} max={100} step={1} color="var(--aqua)" label="Wet" size={48} />
+</div>
 
 # Number Inputs
 
