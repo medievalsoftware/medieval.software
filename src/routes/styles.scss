@@ -266,8 +266,8 @@ nav, nav *,
   position: relative;
   display: flex;
   flex-direction: row;
-  height: 100vh;
-  max-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   flex-shrink: 0;
 }
 
@@ -350,8 +350,8 @@ nav.groups {
   position: absolute;
   left: 100%;
   top: 0;
-  height: 100vh;
-  max-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   overflow-y: auto;
   z-index: calc(var(--floating-z) + 1);
   border-right: 1px solid var(--bg1);
@@ -519,7 +519,7 @@ nav a.active {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  height: 100vh;
+  height: 100dvh;
 }
 
 
