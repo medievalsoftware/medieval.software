@@ -203,6 +203,13 @@
               <span class="desc">Terminal IRC client over WebSocket</span>
             </div>
           </a>
+          <a class="page-card" href="https://knell.medieval.software" target="_blank" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
+            <div class="page-card-icon"><img src="/images/knell.png" alt="Knell" /></div>
+            <div class="page-card-info">
+              <span class="name">Knell</span>
+              <span class="desc">SFX synthesizer</span>
+            </div>
+          </a>
         </div>
 
         <h3 class="section-title">Guild</h3>
@@ -367,6 +374,13 @@
               <div class="page-card-info">
                 <span class="name">Herald</span>
                 <span class="desc">Terminal IRC client over WebSocket</span>
+              </div>
+            </a>
+            <a class="page-card" href="https://knell.medieval.software" target="_blank">
+              <div class="page-card-icon"><img src="/images/knell.png" alt="Knell" /></div>
+              <div class="page-card-info">
+                <span class="name">Knell</span>
+                <span class="desc">SFX synthesizer</span>
               </div>
             </a>
           </div>
