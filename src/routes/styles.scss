@@ -4,7 +4,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans&family=Roboto:wght@400;500&display=swap');
 @import url('https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css');
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -241,15 +243,19 @@ main {
 
 // Prose elements opt back in
 :is(p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote, figcaption,
-    pre, code, a, em, strong, summary, dt, dd),
-.selectable, .selectable * {
+  pre, code, a, em, strong, summary, dt, dd),
+.selectable,
+.selectable * {
   @include selectable;
 }
 
 // Navigation is never selectable — !important to override prose rules above
-nav, nav *,
-.sidebar, .sidebar *,
-#mobile-bar, #mobile-bar * {
+nav,
+nav *,
+.sidebar,
+.sidebar *,
+#mobile-bar,
+#mobile-bar * {
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
   user-select: none !important;
@@ -319,12 +325,12 @@ nav .nav-links {
 nav .group h2 {
   color: var(--fg4);
   margin: 0;
-  font-size: 0.7em;
+  font-size: 0.7rem;
   margin-bottom: 1em;
 }
 
 nav a {
-  font-size: 0.8em;
+  font-size: 0.8rem;
   display: flex;
   flex-direction: row;
   gap: 1rem;
@@ -339,7 +345,7 @@ nav a {
   margin-left: auto;
   color: var(--fg4);
   opacity: 0.5;
-  font-size: 1.2em;
+  font-size: 1.2rem;
 }
 
 nav.groups {
@@ -352,6 +358,7 @@ nav.groups {
   top: 0;
   height: 100dvh;
   max-height: 100dvh;
+  width: 17rem;
   overflow-y: auto;
   z-index: calc(var(--floating-z) + 1);
   border-right: 1px solid var(--bg1);
@@ -387,14 +394,14 @@ nav.groups a .date {
 }
 
 .section-title {
-  font-size: 0.75em;
+  font-size: 0.75rem;
   font-weight: bold;
   color: var(--fg2);
   margin: 0.8rem 0;
 }
 
 .section-desc {
-  font-size: 0.6em;
+  font-size: 0.75rem;
   color: var(--fg4);
   margin: -0.6rem 0 0.8rem 0;
 }
@@ -454,12 +461,12 @@ nav .page-card img {
 
 .page-card .name {
   font-weight: bold;
-  font-size: 0.8em;
+  font-size: 0.7rem;
   color: var(--fg);
 }
 
 .page-card .desc {
-  font-size: 0.65em;
+  font-size: 0.7rem;
   color: var(--fg4);
   line-height: 1.2;
 }
@@ -488,7 +495,7 @@ nav .page-card img {
   right: 0;
   background: var(--bg3);
   color: var(--fg4);
-  font-size: 0.55em;
+  font-size: 0.75rem;
   font-weight: bold;
   text-align: center;
   letter-spacing: 0.05em;
