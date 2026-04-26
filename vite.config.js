@@ -1,8 +1,9 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
+import postIconVariants from './vite-plugins/post-icon-variants.js';
 
 export default defineConfig({
-	plugins: [sveltekit()],
+	plugins: [postIconVariants(), sveltekit()],
 	css: {
 		preprocessorOptions: {
 			scss: {

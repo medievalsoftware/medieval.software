@@ -5,6 +5,7 @@
   
   import Link from '$lib/components/Link.svelte';
   import Links from '$lib/components/Links.svelte';
+  import PostIcon from '$lib/components/PostIcon.svelte';
 
   import { page } from '$app/stores';
   import dateFormat from 'dateformat';
@@ -174,7 +175,7 @@
               scroll_to_top();
             }}
           >
-            {#if post.icon}<img class="post-icon" src={post.icon} alt={post.title} />{/if}
+            {#if post.icon}<PostIcon src={post.icon} alt={post.title} size={48} />{/if}
             <div class="col">
               <span class="title">
                 {post.title}
@@ -347,7 +348,7 @@
                 scroll_to_top();
               }}
             >
-              {#if post.icon}<img class="post-icon" src={post.icon} alt={post.title} />{/if}
+              {#if post.icon}<PostIcon src={post.icon} alt={post.title} size={32} />{/if}
               <div class="col">
                 <span class="title">
                   {post.title}
