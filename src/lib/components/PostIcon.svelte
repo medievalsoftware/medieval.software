@@ -26,6 +26,7 @@
 	sizes="{size}px"
 	width={size}
 	height={size}
+	style="--post-icon-size: {size}px;"
 	{alt}
 	{...$$restProps}
 />
@@ -33,5 +34,14 @@
 <style>
 	.post-icon {
 		display: block;
+		width: var(--post-icon-size);
+		height: var(--post-icon-size);
+		min-width: var(--post-icon-size);
+		min-height: var(--post-icon-size);
+		max-width: var(--post-icon-size);
+		max-height: var(--post-icon-size);
+		aspect-ratio: 1 / 1;
+		object-fit: cover;
+		flex-shrink: 0;
 	}
 </style>
