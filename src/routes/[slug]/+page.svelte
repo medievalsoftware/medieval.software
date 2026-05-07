@@ -3,6 +3,7 @@
 	export let data;
 
 	import Image from '$lib/components/Image.svelte';
+	import Comments from '$lib/components/Comments.svelte';
 
 	export { Image };
 </script>
@@ -34,4 +35,7 @@
 	<span class="post-date">{data.meta.date}</span>
 	<hr />
 	<svelte:component this={data.content} />
+	{#if data.meta.comments !== false}
+		<Comments />
+	{/if}
 </article>
