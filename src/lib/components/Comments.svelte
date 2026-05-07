@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	let container;
 
@@ -21,6 +21,10 @@
 		script.setAttribute('data-lang', 'en');
 		script.setAttribute('data-loading', 'lazy');
 		container.appendChild(script);
+	});
+
+	onDestroy(() => {
+		if (container) container.innerHTML = '';
 	});
 </script>
 
