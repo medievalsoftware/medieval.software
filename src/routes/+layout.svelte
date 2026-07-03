@@ -7,6 +7,9 @@
   import Links from '$lib/components/Links.svelte';
   import PostIcon from '$lib/components/PostIcon.svelte';
 
+  import { projectSections } from '$lib/data/projects';
+  import { showcases } from '$lib/data/showcases';
+
   import { page } from '$app/stores';
   import dateFormat from 'dateformat';
 
@@ -100,10 +103,11 @@
     />
     <Link
       caption="Projects"
-      href="#"
+      href="/projects"
       img="/images/anvil.png"
       class={show.pages ? 'active' : ''}
-      on:click={() => {
+      on:click={(e) => {
+        e.preventDefault();
         show.pages = !show.pages;
         show.content = !show.pages;
         if (show.pages) {
@@ -116,10 +120,11 @@
     />
     <Link
       caption="Showcases"
-      href="#"
+      href="/showcases"
       img="/images/lute.png"
       class={show.showcases ? 'active' : ''}
-      on:click={() => {
+      on:click={(e) => {
+        e.preventDefault();
         show.showcases = !show.showcases;
         show.content = !show.showcases;
         if (show.showcases) {
@@ -194,49 +199,21 @@
     <nav id="mobile-pages" class="groups">
       <div class="group">
         <h2>Projects</h2>
-
-        <h3 class="section-title">Forge</h3>
-        <p class="section-desc">Crafted in-house</p>
-        <div class="page-cards">
-          <a class="page-card" href="https://github.com/medievalsoftware/herald" target="_blank" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
-            <div class="page-card-icon"><img src="/images/herald.png" alt="Herald" /></div>
-            <div class="page-card-info">
-              <span class="name">Herald</span>
-              <span class="desc">Terminal IRC client over WebSocket</span>
-            </div>
-          </a>
-          <a class="page-card" href="https://knell.medieval.software" target="_blank" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
-            <div class="page-card-icon"><img src="/images/knell.png" alt="Knell" /></div>
-            <div class="page-card-info">
-              <span class="name">Knell</span>
-              <span class="desc">SFX synthesizer</span>
-            </div>
-          </a>
-        </div>
-
-        <h3 class="section-title">Guild</h3>
-        <p class="section-desc">From friends and allies</p>
-        <div class="page-cards">
-          <a class="page-card" href="https://kingscrook.itch.io/kings-crook" target="_blank" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
-            <div class="page-card-icon"><img style="border-radius: var(--radius-xs)" src="/images/kings_crook.png" alt="King's Crook" /></div>
-            <div class="page-card-info">
-              <span class="name">King's Crook</span>
-              <span class="desc">Open-world RPG built from scratch in pure C</span>
-            </div>
-          </a>
-        </div>
-
-        <h3 class="section-title">Frontier</h3>
-        <p class="section-desc">Discoveries from afar</p>
-        <div class="page-cards">
-          <a class="page-card" href="https://flycast.medieval.software/" target="_blank" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
-            <div class="page-card-icon"><img src="/images/flycast.png" alt="Flycast WASM" /></div>
-            <div class="page-card-info">
-              <span class="name">Flycast WASM</span>
-              <span class="desc">Sega Dreamcast emulation in the browser via WebAssembly</span>
-            </div>
-          </a>
-        </div>
+        {#each projectSections as section}
+          <h3 class="section-title">{section.title}</h3>
+          <p class="section-desc">{section.desc}</p>
+          <div class="page-cards">
+            {#each section.cards as card}
+              <a class="page-card" href={card.url} target="_blank" on:click={() => { show.pages = false; show.content = true; scroll_to_top(); }}>
+                <div class="page-card-icon"><img style={card.iconStyle ?? ''} src={card.img} alt={card.name} /></div>
+                <div class="page-card-info">
+                  <span class="name">{card.name}</span>
+                  <span class="desc">{card.desc}</span>
+                </div>
+              </a>
+            {/each}
+          </div>
+        {/each}
       </div>
     </nav>
   {/if}
@@ -246,14 +223,16 @@
       <div class="group">
         <h2>Showcases</h2>
         <div class="page-cards">
-          <a class="page-card coming-soon" href="#">
-            <div class="ribbon">In the Works</div>
-            <div class="page-card-icon"><img src="/images/theatre_mask.png" alt="Voice Reels" /></div>
-            <div class="page-card-info">
-              <span class="name">Voice Reels</span>
-              <span class="desc">Exploring voice acting with character snippets and scenes</span>
-            </div>
-          </a>
+          {#each showcases as showcase}
+            <a class="page-card" class:coming-soon={showcase.comingSoon} href={showcase.url}>
+              {#if showcase.ribbon}<div class="ribbon">{showcase.ribbon}</div>{/if}
+              <div class="page-card-icon"><img src={showcase.img} alt={showcase.name} /></div>
+              <div class="page-card-info">
+                <span class="name">{showcase.name}</span>
+                <span class="desc">{showcase.desc}</span>
+              </div>
+            </a>
+          {/each}
         </div>
       </div>
     </nav>
@@ -305,7 +284,7 @@
           <span class="panel-arrow">›</span>
         </a>
         <a
-          href={'#projects'}
+          href="/projects"
           class:active={show.pages}
           on:mouseenter={() => openPanel('pages')}
           on:click|preventDefault={() => togglePanel('pages')}
@@ -315,7 +294,7 @@
           <span class="panel-arrow">›</span>
         </a>
         <a
-          href={'#showcases'}
+          href="/showcases"
           class:active={show.showcases}
           on:mouseenter={() => openPanel('showcases')}
           on:click|preventDefault={() => togglePanel('showcases')}
@@ -367,49 +346,21 @@
       <nav class="groups pages" >
         <div class="group">
           <h2>Projects</h2>
-
-          <h3 class="section-title">Forge</h3>
-          <p class="section-desc">Crafted in-house</p>
-          <div class="page-cards">
-            <a class="page-card" href="https://github.com/medievalsoftware/herald" target="_blank">
-              <div class="page-card-icon"><img src="/images/herald.png" alt="Herald" /></div>
-              <div class="page-card-info">
-                <span class="name">Herald</span>
-                <span class="desc">Terminal IRC client over WebSocket</span>
-              </div>
-            </a>
-            <a class="page-card" href="https://knell.medieval.software" target="_blank">
-              <div class="page-card-icon"><img src="/images/knell.png" alt="Knell" /></div>
-              <div class="page-card-info">
-                <span class="name">Knell</span>
-                <span class="desc">SFX synthesizer</span>
-              </div>
-            </a>
-          </div>
-
-          <h3 class="section-title">Guild</h3>
-          <p class="section-desc">From friends and allies</p>
-          <div class="page-cards">
-            <a class="page-card" href="https://kingscrook.itch.io/kings-crook" target="_blank">
-              <div class="page-card-icon"><img style="border-radius: var(--radius-xs)" src="/images/kings_crook.png" alt="King's Crook" /></div>
-              <div class="page-card-info">
-                <span class="name">King's Crook</span>
-                <span class="desc">Open-world RPG built from scratch in pure C</span>
-              </div>
-            </a>
-          </div>
-
-          <h3 class="section-title">Frontier</h3>
-          <p class="section-desc">Discoveries from afar</p>
-          <div class="page-cards">
-            <a class="page-card" href="https://flycast.medieval.software/" target="_blank">
-              <div class="page-card-icon"><img src="/images/flycast.png" alt="Flycast WASM" /></div>
-              <div class="page-card-info">
-                <span class="name">Flycast WASM</span>
-                <span class="desc">Sega Dreamcast emulation in the browser via WebAssembly</span>
-              </div>
-            </a>
-          </div>
+          {#each projectSections as section}
+            <h3 class="section-title">{section.title}</h3>
+            <p class="section-desc">{section.desc}</p>
+            <div class="page-cards">
+              {#each section.cards as card}
+                <a class="page-card" href={card.url} target="_blank">
+                  <div class="page-card-icon"><img style={card.iconStyle ?? ''} src={card.img} alt={card.name} /></div>
+                  <div class="page-card-info">
+                    <span class="name">{card.name}</span>
+                    <span class="desc">{card.desc}</span>
+                  </div>
+                </a>
+              {/each}
+            </div>
+          {/each}
         </div>
       </nav>
     {/if}
@@ -419,14 +370,16 @@
         <div class="group">
           <h2>Showcases</h2>
           <div class="page-cards">
-            <a class="page-card coming-soon" href="#">
-              <div class="ribbon">In the Works</div>
-              <div class="page-card-icon"><img src="/images/theatre_mask.png" alt="Voice Reels" /></div>
-              <div class="page-card-info">
-                <span class="name">Voice Reels</span>
-                <span class="desc">Exploring voice acting with character snippets and scenes</span>
-              </div>
-            </a>
+            {#each showcases as showcase}
+              <a class="page-card" class:coming-soon={showcase.comingSoon} href={showcase.url}>
+                {#if showcase.ribbon}<div class="ribbon">{showcase.ribbon}</div>{/if}
+                <div class="page-card-icon"><img src={showcase.img} alt={showcase.name} /></div>
+                <div class="page-card-info">
+                  <span class="name">{showcase.name}</span>
+                  <span class="desc">{showcase.desc}</span>
+                </div>
+              </a>
+            {/each}
           </div>
         </div>
       </nav>
