@@ -83,10 +83,11 @@
     />
     <Link
       caption="Posts"
-      href="#"
+      href="/posts"
       img="/images/posts.png"
       class={show.posts ? 'active' : ''}
-      on:click={() => {
+      on:click={(e) => {
+        e.preventDefault();
         show.posts = !show.posts;
         show.content = !show.posts;
         if (show.posts) {
@@ -294,7 +295,7 @@
           <span>Home</span>
         </a>
         <a
-          href={'#posts'}
+          href="/posts"
           class:active={show.posts}
           on:mouseenter={() => openPanel('posts')}
           on:click|preventDefault={() => togglePanel('posts')}

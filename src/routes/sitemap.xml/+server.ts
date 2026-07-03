@@ -6,6 +6,7 @@ export async function GET({ fetch }) {
 
   const staticPages = [
     { url: '/', priority: '1.0' },
+    { url: '/posts', priority: '0.9' },
     { url: '/rune-synergy', priority: '0.7' },
   ]
 
