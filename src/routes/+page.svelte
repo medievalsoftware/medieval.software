@@ -141,6 +141,14 @@
 			</div>
 		</div>
 	</div>
+
+	<footer id="company-footer">
+		<p>
+			Medieval Software LLC &middot; 4030 Wake Forest Road, STE 349, Raleigh, NC 27609 &middot;
+			<a href="tel:+19195787208">(919) 578-7208</a>
+		</p>
+		<p class="meta">NAICS 541511 &middot; DUNS 110268911</p>
+	</footer>
 </article>
 
 <style>
@@ -201,5 +209,26 @@
 		#intro {
 			flex-direction: column;
 		}
+	}
+
+	#company-footer {
+		font-size: 0.7em;
+		color: var(--fg4);
+		opacity: 0.7;
+		padding-top: 1em;
+		border-top: 1px solid var(--bg1);
+	}
+
+	#company-footer p {
+		margin: 0;
+	}
+
+	#company-footer .meta {
+		margin-top: 0.3em;
+	}
+
+	#company-footer a {
+		color: inherit;
+		text-decoration: none;
 	}
 </style>
